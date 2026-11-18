@@ -56,10 +56,10 @@ def test_modelo_contrato_ocupacion_instanciacion() -> None:
 
 
 def test_modelo_tasa_cambio_instanciacion() -> None:
-    """Valida la tasa de cambio USD/VES registrada por día"""
-    tasa = TasaCambio(fecha=date(2026, 10, 12), tasa_usd_ves=Decimal("36.5000"))
+    """Valida la tasa de cambio GTQ/USD registrada por día"""
+    tasa = TasaCambio(fecha=date(2026, 10, 12), tasa_usd_gtq=Decimal("7.3000"))
     assert tasa.fecha == date(2026, 10, 12)
-    assert tasa.tasa_usd_ves == Decimal("36.5000")
+    assert tasa.tasa_usd_gtq == Decimal("7.3000")
 
 
 def test_modelo_recibo_instanciacion() -> None:
@@ -67,13 +67,13 @@ def test_modelo_recibo_instanciacion() -> None:
     recibo = Recibo(
         unidad_id=1,
         periodo="2026-10",
-        monto_usd=Decimal("100.00"),
-        monto_pagado_usd=Decimal("0.00"),
+        monto_gtq=Decimal("100.00"),
+        monto_pagado_gtq=Decimal("0.00"),
         estado="PENDIENTE",
         bloqueado=False,
     )
     assert recibo.periodo == "2026-10"
-    assert recibo.monto_usd == Decimal("100.00")
+    assert recibo.monto_gtq == Decimal("100.00")
     assert recibo.estado == "PENDIENTE"
     assert recibo.bloqueado is False
 
@@ -84,34 +84,34 @@ def test_modelo_pago_reportado_instanciacion() -> None:
         recibo_id=1,
         usuario_id=2,
         monto=Decimal("3650.00"),
-        moneda="VES",
-        monto_usd=Decimal("100.00"),
-        tasa_cambio=Decimal("36.5000"),
-        metodo_pago="PAGO_MOVIL",
+        moneda="USD",
+        monto_gtq=Decimal("100.00"),
+        tasa_cambio=Decimal("7.3000"),
+        metodo_pago="DEPOSITO",
         numero_referencia="REF-123",
         estado="EN_REVISION",
     )
-    assert pago.moneda == "VES"
-    assert pago.tasa_cambio == Decimal("36.5000")
+    assert pago.moneda == "USD"
+    assert pago.tasa_cambio == Decimal("7.3000")
     assert pago.numero_referencia == "REF-123"
     assert pago.estado == "EN_REVISION"
 
 
 def test_modelo_egreso_instanciacion() -> None:
-    """Valida el egreso registrado por categoría con su monto en USD"""
+    """Valida el egreso registrado por categoría con su monto en GTQ"""
     egreso = Egreso(
         periodo="2026-10",
         categoria="MANTENIMIENTO",
         descripcion="Reparación de ascensor",
         monto=Decimal("500.00"),
-        moneda="USD",
-        monto_usd=Decimal("500.00"),
-        tasa_cambio=Decimal("36.5000"),
+        moneda="GTQ",
+        monto_gtq=Decimal("500.00"),
+        tasa_cambio=Decimal("7.3000"),
         url_factura="https://minio.local/factura.avif",
         bloqueado=False,
     )
     assert egreso.categoria == "MANTENIMIENTO"
-    assert egreso.monto_usd == Decimal("500.00")
+    assert egreso.monto_gtq == Decimal("500.00")
     assert egreso.bloqueado is False
 
 

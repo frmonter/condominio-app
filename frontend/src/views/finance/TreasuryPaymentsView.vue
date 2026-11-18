@@ -86,7 +86,7 @@ async function handleConfirmReject(payload: { pagoId: number; motivo: string }):
           </div>
 
           <p class="payment-card__amount">
-            {{ pago.monto }} {{ pago.moneda }} (<strong>{{ pago.monto_usd }} USD</strong> a tasa
+            {{ pago.monto }} {{ pago.moneda }} (<strong>{{ pago.monto_gtq }} GTQ</strong> a tasa
             {{ pago.tasa_cambio }})
           </p>
           <p class="payment-card__ref">

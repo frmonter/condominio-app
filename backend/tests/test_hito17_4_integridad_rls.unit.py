@@ -153,7 +153,7 @@ async def _sembrar_datos_base(factory: async_sessionmaker[AsyncSession]) -> dict
                     puede_votar_asamblea=True,
                     fecha_fin=ahora - timedelta(days=2),
                 ),
-                TasaCambio(fecha=date.today(), tasa_usd_ves=Decimal("40.0000")),
+                TasaCambio(fecha=date.today(), tasa_usd_gtq=Decimal("40.0000")),
             ]
         )
 
@@ -187,16 +187,16 @@ async def _sembrar_datos_base(factory: async_sessionmaker[AsyncSession]) -> dict
         area_pago = AreaSocial(
             nombre="Salón Imperial H17",
             aforo_maximo=60,
-            costo_uso_usd=Decimal("25.00"),
-            deposito_garantia_usd=Decimal("100.00"),
+            costo_uso_gtq=Decimal("25.00"),
+            deposito_garantia_gtq=Decimal("100.00"),
             requiere_solvencia_estricta=True,
             es_activa=True,
         )
         area_libre = AreaSocial(
             nombre="Caney Libre H17",
             aforo_maximo=30,
-            costo_uso_usd=Decimal("0.00"),
-            deposito_garantia_usd=Decimal("0.00"),
+            costo_uso_gtq=Decimal("0.00"),
+            deposito_garantia_gtq=Decimal("0.00"),
             requiere_solvencia_estricta=False,
             es_activa=True,
         )
@@ -308,8 +308,8 @@ async def test_consultas_jti_cierre_y_solvencia_dinamica_hito17_4(tmp_path: Path
                     Recibo(
                         unidad_id=ids["u1"],
                         periodo="2026-12",
-                        monto_usd=Decimal("50.00"),
-                        monto_pagado_usd=Decimal("0.00"),
+                        monto_gtq=Decimal("50.00"),
+                        monto_pagado_gtq=Decimal("0.00"),
                         estado="PENDIENTE",
                     )
                 )
@@ -427,7 +427,7 @@ async def test_reservas_indice_parcial_cancelacion_y_cargo_danos_hito17_4(tmp_pa
                 recibos = list((await s.execute(select(Recibo).where(Recibo.unidad_id == ids["u2"]))).scalars().all())
                 assert len(recibos) == 1
                 assert recibos[0].estado == "PENDIENTE"
-                assert recibos[0].monto_usd == Decimal("100.00")
+                assert recibos[0].monto_gtq == Decimal("100.00")
 
                 items = list((await s.execute(select(ReciboItem))).scalars().all())
                 assert len(items) == 1
@@ -439,7 +439,7 @@ async def test_reservas_indice_parcial_cancelacion_y_cargo_danos_hito17_4(tmp_pa
                 assert auditorias[0].estado_nuevo == "PENDIENTE"
                 assert "depósito por daños en reserva" in auditorias[0].motivo
 
-            # Área con deposito_garantia_usd == 0 no genera recibo adicional al reportar daños
+            # Área con deposito_garantia_gtq == 0 no genera recibo adicional al reportar daños
             res_libre = await client.post(
                 "/api/reservas/solicitar",
                 headers=_idem_headers(),
@@ -491,7 +491,7 @@ async def test_administracion_privacidad_historico_contratos_y_lph_hito17_4(tmp_
         app.dependency_overrides[get_redis_client] = lambda: mock_redis
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            # 1a. Anónimo recibe UnidadPublicaResponse (sin alicuota, cuota_fija_usd ni credito_disponible_usd)
+            # 1a. Anónimo recibe UnidadPublicaResponse (sin alicuota, cuota_fija_gtq ni credito_disponible_gtq)
             app.dependency_overrides.pop(get_current_user, None)
             res_anon = await client.get("/api/estructura/unidades")
             assert res_anon.status_code == 200
@@ -514,8 +514,8 @@ async def test_administracion_privacidad_historico_contratos_y_lph_hito17_4(tmp_
                 "identificador",
                 "estructura_id",
                 "alicuota",
-                "cuota_fija_usd",
-                "credito_disponible_usd",
+                "cuota_fija_gtq",
+                "credito_disponible_gtq",
             }
             for item in res_act.json():
                 assert campos_privados <= set(item.keys())

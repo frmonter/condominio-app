@@ -77,7 +77,7 @@ describe('AdminStructureView.vue — Generador de Estructura Física', () => {
         identificador: 'Apto 1-A',
         estructura_id: 1,
         alicuota: '10.0000',
-        cuota_fija_usd: null,
+        cuota_fija_gtq: null,
       },
     ];
     vi.spyOn(store, 'fetchAdminData').mockResolvedValue();
@@ -86,7 +86,7 @@ describe('AdminStructureView.vue — Generador de Estructura Física', () => {
       identificador: 'Apto 1-A',
       estructura_id: 1,
       alicuota: '25.0000',
-      cuota_fija_usd: '30.00',
+      cuota_fija_gtq: '30.00',
     });
 
     const wrapper = mount(AdminStructureView);

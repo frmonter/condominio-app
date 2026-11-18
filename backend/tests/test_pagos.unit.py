@@ -56,7 +56,7 @@ def _setup(session: AsyncMock, redis_is_new: bool = True, user: Any = None) -> A
 
 
 def _tasa() -> TasaCambio:
-    return TasaCambio(id=1, fecha=date.today(), tasa_usd_ves=Decimal("36.5000"))
+    return TasaCambio(id=1, fecha=date.today(), tasa_usd_gtq=Decimal("7.3000"))
 
 
 def _recibo(bloqueado: bool = False, pagado: str = "0.00") -> Recibo:
@@ -64,8 +64,8 @@ def _recibo(bloqueado: bool = False, pagado: str = "0.00") -> Recibo:
         id=1,
         unidad_id=1,
         periodo="2026-10",
-        monto_usd=Decimal("100.00"),
-        monto_pagado_usd=Decimal(pagado),
+        monto_gtq=Decimal("100.00"),
+        monto_pagado_gtq=Decimal(pagado),
         estado="PENDIENTE",
         bloqueado=bloqueado,
     )
@@ -77,19 +77,19 @@ def _unidad(credito: str = "0.00") -> Unidad:
         identificador="A-01",
         estructura_id=1,
         alicuota=Decimal("25.0000"),
-        credito_disponible_usd=Decimal(credito),
+        credito_disponible_gtq=Decimal(credito),
     )
 
 
-def _pago(estado: str = "EN_REVISION", monto_usd: str = "40.00") -> PagoReportado:
+def _pago(estado: str = "EN_REVISION", monto_gtq: str = "40.00") -> PagoReportado:
     return PagoReportado(
         id=5,
         recibo_id=1,
         usuario_id=7,
-        monto=Decimal(monto_usd),
-        moneda="USD",
-        monto_usd=Decimal(monto_usd),
-        tasa_cambio=Decimal("36.5000"),
+        monto=Decimal(monto_gtq),
+        moneda="GTQ",
+        monto_gtq=Decimal(monto_gtq),
+        tasa_cambio=Decimal("7.3000"),
         metodo_pago="EFECTIVO",
         numero_referencia=None,
         url_comprobante=None,
@@ -97,7 +97,7 @@ def _pago(estado: str = "EN_REVISION", monto_usd: str = "40.00") -> PagoReportad
     )
 
 
-PAYLOAD = {"recibo_id": 1, "monto": "100.00", "moneda": "USD", "metodo_pago": "EFECTIVO"}
+PAYLOAD = {"recibo_id": 1, "monto": "100.00", "moneda": "GTQ", "metodo_pago": "EFECTIVO"}
 HEADERS = {"Idempotency-Key": "11111111-1111-1111-1111-111111111111"}
 
 
@@ -109,23 +109,23 @@ def test_reportar_pago_success(client: TestClient) -> None:
 
     assert response.status_code == 201
     body = response.json()
-    assert float(body["monto_usd"]) == 100.0
-    assert float(body["tasa_cambio"]) == 36.5
+    assert float(body["monto_gtq"]) == 100.0
+    assert float(body["tasa_cambio"]) == 7.3
     assert body["estado"] == "EN_REVISION"
     assert session.add.call_count == 1
 
     app.dependency_overrides = {}
 
 
-def test_reportar_pago_ves_convierte_por_tasa_del_dia(client: TestClient) -> None:
+def test_reportar_pago_usd_convierte_por_tasa_del_dia(client: TestClient) -> None:
     session = _mock_session(_result(_tasa()), _result(_recibo()))
     _setup(session)
-    payload = {"recibo_id": 1, "monto": "3650.00", "moneda": "VES", "metodo_pago": "EFECTIVO"}
+    payload = {"recibo_id": 1, "monto": "100.00", "moneda": "USD", "metodo_pago": "EFECTIVO"}
 
     response = client.post("/api/pagos/reportar", json=payload, headers=HEADERS)
 
     assert response.status_code == 201
-    assert float(response.json()["monto_usd"]) == 100.0
+    assert float(response.json()["monto_gtq"]) == 730.0
 
     app.dependency_overrides = {}
 
@@ -142,10 +142,10 @@ def test_reportar_pago_duplicado(client: TestClient) -> None:
     app.dependency_overrides = {}
 
 
-def test_reportar_pago_zelle_sin_referencia_falla(client: TestClient) -> None:
+def test_reportar_pago_deposito_sin_referencia_falla(client: TestClient) -> None:
     session = _mock_session()
     _setup(session)
-    payload = {"recibo_id": 1, "monto": "100.00", "moneda": "USD", "metodo_pago": "ZELLE"}
+    payload = {"recibo_id": 1, "monto": "100.00", "moneda": "GTQ", "metodo_pago": "TRANSFERENCIA"}
 
     response = client.post("/api/pagos/reportar", json=payload, headers=HEADERS)
 
@@ -233,7 +233,7 @@ def test_listar_pagos_en_revision(client: TestClient) -> None:
 
 
 def test_aprobar_pago_parcial(client: TestClient) -> None:
-    pago = _pago(monto_usd="40.00")
+    pago = _pago(monto_gtq="40.00")
     recibo = _recibo()
     unidad = _unidad()
     session = _mock_session(_result(pago), _result(recibo), _result(unidad))
@@ -244,14 +244,14 @@ def test_aprobar_pago_parcial(client: TestClient) -> None:
     assert response.status_code == 200
     assert response.json()["estado"] == "APROBADO"
     assert recibo.estado == "PAGADO_PARCIAL"
-    assert recibo.monto_pagado_usd == Decimal("40.00")
+    assert recibo.monto_pagado_gtq == Decimal("40.00")
     assert session.add.call_count == 1
 
     app.dependency_overrides = {}
 
 
 def test_aprobar_pago_total_exacto(client: TestClient) -> None:
-    pago = _pago(monto_usd="100.00")
+    pago = _pago(monto_gtq="100.00")
     recibo = _recibo()
     unidad = _unidad()
     session = _mock_session(_result(pago), _result(recibo), _result(unidad))
@@ -261,13 +261,13 @@ def test_aprobar_pago_total_exacto(client: TestClient) -> None:
 
     assert response.status_code == 200
     assert recibo.estado == "PAGADO"
-    assert recibo.monto_pagado_usd == Decimal("100.00")
+    assert recibo.monto_pagado_gtq == Decimal("100.00")
 
     app.dependency_overrides = {}
 
 
 def test_aprobar_pago_parcial_sobre_saldo_previo(client: TestClient) -> None:
-    pago = _pago(monto_usd="30.00")
+    pago = _pago(monto_gtq="30.00")
     recibo = _recibo(pagado="40.00")
     unidad = _unidad()
     session = _mock_session(_result(pago), _result(recibo), _result(unidad))
@@ -275,7 +275,7 @@ def test_aprobar_pago_parcial_sobre_saldo_previo(client: TestClient) -> None:
 
     client.put("/api/pagos/5/aprobar", headers=HEADERS)
 
-    assert recibo.monto_pagado_usd == Decimal("70.00")
+    assert recibo.monto_pagado_gtq == Decimal("70.00")
     assert recibo.estado == "PAGADO_PARCIAL"
 
     app.dependency_overrides = {}
@@ -458,8 +458,8 @@ def test_reportar_pago_anti_idor_y_colision_integrity_error(client: TestClient) 
         json={
             "recibo_id": 1,
             "monto": "100.00",
-            "moneda": "USD",
-            "metodo_pago": "ZELLE",
+            "moneda": "GTQ",
+            "metodo_pago": "TRANSFERENCIA",
             "numero_referencia": "REF-RACE-01",
         },
         headers=HEADERS,

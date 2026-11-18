@@ -199,8 +199,8 @@ async def _asegurar_estructura_y_unidad(
         identificador=cfg.unidad_inicial,
         estructura_id=estructura.id,
         alicuota=Decimal("0.0000"),
-        cuota_fija_usd=None,
-        credito_disponible_usd=Decimal("0.00"),
+        cuota_fija_gtq=None,
+        credito_disponible_gtq=Decimal("0.00"),
     )
     session.add(unidad)
     await session.flush()

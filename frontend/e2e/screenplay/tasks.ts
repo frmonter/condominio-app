@@ -124,7 +124,7 @@ export class ReportPayment implements Task {
     await page.goto('/finanzas/reportar-pago', { waitUntil: 'domcontentloaded' });
     await page.locator('#step-1-monto').fill(this.monto);
     await page.locator('#btn-step-1-next').click();
-    await page.locator('#step-2-metodo').selectOption('PAGO_MOVIL');
+    await page.locator('#step-2-metodo').selectOption('DEPOSITO');
     await page.locator('#input-referencia').fill(this.referencia);
     await page.locator('#btn-step-2-next').click();
     await page.locator('#btn-submit-pago').click();

@@ -6,20 +6,20 @@ import CollectionTrafficLight from './CollectionTrafficLight.vue';
 describe('CollectionTrafficLight.vue', () => {
   it('muestra mensaje vacío cuando no hay recibos emitidos', () => {
     const wrapper = mount(CollectionTrafficLight, {
-      props: { items: [], rateUsdVes: '36.50' },
+      props: { items: [], rateUsdGtq: '7.70' },
     });
     expect(wrapper.text()).toContain('No existen recibos emitidos');
   });
 
-  it('ordena la unidad propia primero y calcula el equivalente en VES', () => {
+  it('ordena la unidad propia primero y calcula el equivalente en USD', () => {
     const wrapper = mount(CollectionTrafficLight, {
       props: {
-        rateUsdVes: '40.00',
+        rateUsdGtq: '8.00',
         ownUnitId: 5,
         items: [
-          { unidad_id: 2, periodo: '2026-10', estado: 'SOLVENTE', saldo_usd: '0.00' },
-          { unidad_id: 5, periodo: '2026-10', estado: 'ABONO_PARCIAL', saldo_usd: '25.00' },
-          { unidad_id: 1, periodo: '2026-10', estado: 'MOROSO', saldo_usd: '75.00' },
+          { unidad_id: 2, periodo: '2026-10', estado: 'SOLVENTE', saldo_gtq: '0.00' },
+          { unidad_id: 5, periodo: '2026-10', estado: 'ABONO_PARCIAL', saldo_gtq: '80.00' },
+          { unidad_id: 1, periodo: '2026-10', estado: 'MOROSO', saldo_gtq: '75.00' },
         ],
       },
     });
@@ -28,7 +28,7 @@ describe('CollectionTrafficLight.vue', () => {
     expect(rows).toHaveLength(3);
     expect(rows[0]?.text()).toContain('Unidad #5');
     expect(rows[0]?.text()).toContain('(Tu unidad)');
-    expect(rows[0]?.text()).toContain('1000.00 VES');
+    expect(rows[0]?.text()).toContain('10.00 USD');
     expect(rows[0]?.find('.status-pill__glyph').text()).toBe('◐');
     expect(rows[1]?.text()).toContain('Unidad #1');
     expect(rows[1]?.find('.status-pill__glyph').text()).toBe('✕');
@@ -37,16 +37,16 @@ describe('CollectionTrafficLight.vue', () => {
 
     const fallbackWrapper = mount(CollectionTrafficLight, {
       props: {
-        rateUsdVes: '40.00',
+        rateUsdGtq: '8.00',
         ownUnitId: 5,
         items: [
           {
             unidad_id: 2,
             periodo: '2026-10',
             estado: 'DESCONOCIDO' as unknown as EstadoRecibo,
-            saldo_usd: '10.00',
+            saldo_gtq: '10.00',
           },
-          { unidad_id: 1, periodo: '2026-10', estado: 'PENDIENTE', saldo_usd: '5.00' },
+          { unidad_id: 1, periodo: '2026-10', estado: 'PENDIENTE', saldo_gtq: '5.00' },
         ],
       },
     });

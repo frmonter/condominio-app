@@ -57,21 +57,21 @@ class UsuarioResponse(UsuarioBase):
     rol: str
 
 
-Moneda = Literal["USD", "VES"]
+Moneda = Literal["GTQ", "USD"]
 
 
 class TasaCambioCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     fecha: date_type | None = None
-    tasa_usd_ves: Decimal = Field(gt=0)
+    tasa_usd_gtq: Decimal = Field(gt=0)
 
 
 class TasaCambioResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     fecha: date_type
-    tasa_usd_ves: Decimal
+    tasa_usd_gtq: Decimal
 
 
 class ReciboCreate(BaseModel):
@@ -79,7 +79,7 @@ class ReciboCreate(BaseModel):
 
     unidad_id: int = Field(strict=True)
     periodo: str = Field(pattern=r"^\d{4}-\d{2}$")
-    monto_usd: Decimal = Field(gt=0)
+    monto_gtq: Decimal = Field(gt=0)
 
 
 class ReciboResponse(BaseModel):
@@ -88,8 +88,8 @@ class ReciboResponse(BaseModel):
     id: int
     unidad_id: int
     periodo: str
-    monto_usd: Decimal
-    monto_pagado_usd: Decimal
+    monto_gtq: Decimal
+    monto_pagado_gtq: Decimal
     estado: str
     bloqueado: bool
 
@@ -113,7 +113,7 @@ class PagoResponse(BaseModel):
     usuario_id: int
     monto: Decimal
     moneda: str
-    monto_usd: Decimal
+    monto_gtq: Decimal
     tasa_cambio: Decimal
     metodo_pago: str
     numero_referencia: str | None
@@ -186,22 +186,22 @@ class UnidadResponse(BaseModel):
     identificador: str
     estructura_id: int
     alicuota: Decimal = Decimal("0.0000")
-    cuota_fija_usd: Decimal | None = None
-    credito_disponible_usd: Decimal = Decimal("0.00")
+    cuota_fija_gtq: Decimal | None = None
+    credito_disponible_gtq: Decimal = Decimal("0.00")
 
     @model_validator(mode="before")
     @classmethod
     def _normalizar_nulos_en_memoria(cls, data: Any) -> Any:
         if hasattr(data, "identificador") and not isinstance(data, dict):
             alicuota_raw = getattr(data, "alicuota", None)
-            credito_raw = getattr(data, "credito_disponible_usd", None)
+            credito_raw = getattr(data, "credito_disponible_gtq", None)
             return {
                 "id": getattr(data, "id", 0),
                 "identificador": getattr(data, "identificador", ""),
                 "estructura_id": getattr(data, "estructura_id", 1),
                 "alicuota": Decimal("0.0000") if alicuota_raw is None else alicuota_raw,
-                "cuota_fija_usd": getattr(data, "cuota_fija_usd", None),
-                "credito_disponible_usd": Decimal("0.00") if credito_raw is None else credito_raw,
+                "cuota_fija_gtq": getattr(data, "cuota_fija_gtq", None),
+                "credito_disponible_gtq": Decimal("0.00") if credito_raw is None else credito_raw,
             }
         return data
 
@@ -210,7 +210,7 @@ class AlicuotaUpdateRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     alicuota: Decimal = Field(..., ge=Decimal("0.0000"), le=Decimal("100.0000"))
-    cuota_fija_usd: Decimal | None = Field(default=None, ge=Decimal("0.00"))
+    cuota_fija_gtq: Decimal | None = Field(default=None, ge=Decimal("0.00"))
 
 
 class EstructuraGenerarResponse(BaseModel):
@@ -395,7 +395,7 @@ class FondoCondominioResponse(BaseModel):
     nombre: str
     tipo: str
     porcentaje_recargo: Decimal
-    saldo_actual_usd: Decimal
+    saldo_actual_gtq: Decimal
     es_activo: bool
 
 
@@ -404,9 +404,9 @@ class FacturarPeriodoRequest(BaseModel):
 
     periodo: str = Field(..., pattern=r"^\d{4}-(0[1-9]|1[0-2])$")
     modalidad: ModalidadFacturacion = "ALICUOTA"
-    monto_cuota_fija_usd: Decimal | None = Field(default=None, gt=Decimal("0.00"))
+    monto_cuota_fija_gtq: Decimal | None = Field(default=None, gt=Decimal("0.00"))
     incluir_fondo_reserva: bool = True
-    cuota_extraordinaria_total_usd: Decimal = Field(default=Decimal("0.00"), ge=Decimal("0.00"))
+    cuota_extraordinaria_total_gtq: Decimal = Field(default=Decimal("0.00"), ge=Decimal("0.00"))
     descripcion_cuota_extraordinaria: str | None = Field(default=None, max_length=200)
 
 
@@ -417,7 +417,7 @@ class ReciboItemResponse(BaseModel):
     recibo_id: int
     tipo_item: str
     descripcion: str
-    monto_usd: Decimal
+    monto_gtq: Decimal
 
 
 class ReciboDesgloseResponse(BaseModel):
@@ -426,10 +426,10 @@ class ReciboDesgloseResponse(BaseModel):
     identificador_unidad: str
     alicuota_aplicada: Decimal
     periodo: str
-    monto_usd: Decimal
-    monto_pagado_usd: Decimal
-    saldo_pendiente_usd: Decimal
-    credito_descontado_usd: Decimal
+    monto_gtq: Decimal
+    monto_pagado_gtq: Decimal
+    saldo_pendiente_gtq: Decimal
+    credito_descontado_gtq: Decimal
     estado: str
     bloqueado: bool
     items: list[ReciboItemResponse]
@@ -439,13 +439,13 @@ class FacturarPeriodoResponse(BaseModel):
     periodo: str
     modalidad: str
     recibos_emitidos: int
-    total_egresos_comunes_usd: Decimal
-    recargo_fondo_reserva_usd: Decimal
-    cuota_extraordinaria_total_usd: Decimal
-    total_facturado_bruto_usd: Decimal
-    total_credito_descontado_usd: Decimal
-    total_facturado_neto_usd: Decimal
-    superavit_conciliado_fondo_usd: Decimal
+    total_egresos_comunes_gtq: Decimal
+    recargo_fondo_reserva_gtq: Decimal
+    cuota_extraordinaria_total_gtq: Decimal
+    total_facturado_bruto_gtq: Decimal
+    total_credito_descontado_gtq: Decimal
+    total_facturado_neto_gtq: Decimal
+    superavit_conciliado_fondo_gtq: Decimal
 
 
 class CertificadoSolvenciaResponse(BaseModel):
@@ -459,7 +459,7 @@ class CertificadoSolvenciaResponse(BaseModel):
     emitido_por_id: int
     fecha_emision: datetime
     fecha_vencimiento: date_type
-    deuda_verificada_usd: Decimal
+    deuda_verificada_gtq: Decimal
     firma_hmac: str
     qr_token: str
 
@@ -472,7 +472,7 @@ class VerificarSolvenciaResponse(BaseModel):
     identificador_unidad: str
     fecha_vencimiento: date_type
     vigente: bool
-    deuda_verificada_usd: Decimal
+    deuda_verificada_gtq: Decimal
     firma_hmac: str
 
 
@@ -698,8 +698,8 @@ class AreaSocialCreate(BaseModel):
 
     nombre: str = Field(..., min_length=3, max_length=100)
     aforo_maximo: int = Field(..., strict=True, ge=1, le=500)
-    costo_uso_usd: Decimal = Field(default=Decimal("0.00"), ge=Decimal("0.00"))
-    deposito_garantia_usd: Decimal = Field(default=Decimal("0.00"), ge=Decimal("0.00"))
+    costo_uso_gtq: Decimal = Field(default=Decimal("0.00"), ge=Decimal("0.00"))
+    deposito_garantia_gtq: Decimal = Field(default=Decimal("0.00"), ge=Decimal("0.00"))
     requiere_solvencia_estricta: bool = Field(default=True, strict=True)
 
 
@@ -709,8 +709,8 @@ class AreaSocialResponse(BaseModel):
     id: int
     nombre: str
     aforo_maximo: int
-    costo_uso_usd: Decimal
-    deposito_garantia_usd: Decimal
+    costo_uso_gtq: Decimal
+    deposito_garantia_gtq: Decimal
     requiere_solvencia_estricta: bool
     es_activa: bool
 

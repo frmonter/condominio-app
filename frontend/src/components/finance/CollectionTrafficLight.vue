@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { convertUsdToVes, type EstadoCobranzaItemDTO } from '../../stores/financeStore';
+import { convertGtqToUsd, type EstadoCobranzaItemDTO } from '../../stores/financeStore';
 
 const props = withDefaults(
   defineProps<{
     items: EstadoCobranzaItemDTO[];
-    rateUsdVes: string;
+    rateUsdGtq: string;
     ownUnitId?: number | null;
   }>(),
   {
@@ -23,8 +23,8 @@ const sortedItems = computed<EstadoCobranzaItemDTO[]>(() => {
   });
 });
 
-function formatVes(saldoUsd: string): string {
-  return convertUsdToVes(saldoUsd, props.rateUsdVes);
+function formatUsd(saldoGtq: string): string {
+  return convertGtqToUsd(saldoGtq, props.rateUsdGtq);
 }
 
 const STATUS_GLYPHS: Record<string, string> = {
@@ -53,14 +53,14 @@ function glyphFor(estado: string): string {
   >
     <table class="collection-table">
       <caption id="collection-table-caption" class="collection-table__caption">
-        Semáforo de cobranza por unidad y saldo en USD / VES
+        Semáforo de cobranza por unidad y saldo en GTQ / USD
       </caption>
       <thead>
         <tr>
           <th scope="col">Unidad</th>
           <th scope="col">Periodo</th>
           <th scope="col">Estado</th>
-          <th scope="col">Saldo (USD / VES)</th>
+          <th scope="col">Saldo (GTQ / USD)</th>
         </tr>
       </thead>
       <tbody>
@@ -87,8 +87,8 @@ function glyphFor(estado: string): string {
             </span>
           </td>
           <td>
-            <strong class="tabular-nums">{{ item.saldo_usd }} USD</strong>
-            <span class="ves-subtext tabular-nums">({{ formatVes(item.saldo_usd) }} VES)</span>
+            <strong class="tabular-nums">{{ item.saldo_gtq }} GTQ</strong>
+            <span class="usd-subtext tabular-nums">({{ formatUsd(item.saldo_gtq) }} USD)</span>
           </td>
         </tr>
       </tbody>
@@ -115,7 +115,7 @@ function glyphFor(estado: string): string {
   font-variant-numeric: tabular-nums;
   --label-2: 'Periodo';
   --label-3: 'Estado';
-  --label-4: 'Saldo (USD / VES)';
+  --label-4: 'Saldo (GTQ / USD)';
 }
 
 .collection-table__caption {
@@ -207,7 +207,7 @@ tbody tr.collection-row--own td {
   color: var(--status-danger-text, #991b1b);
 }
 
-.ves-subtext {
+.usd-subtext {
   display: inline-block;
   margin-left: 0.375rem;
   color: var(--text-secondary, #475569);

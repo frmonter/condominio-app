@@ -242,8 +242,8 @@ describe('useAccessAmenitiesStore (Pases QR HMAC-SHA256, Anti-Replay y Paqueter√
       id: 1,
       nombre: 'Sal√≥n de <b>Fiestas</b>',
       aforo_maximo: 80,
-      costo_uso_usd: '35.00',
-      deposito_garantia_usd: '100.00',
+      costo_uso_gtq: '35.00',
+      deposito_garantia_gtq: '100.00',
       requiere_solvencia_estricta: true,
       es_activa: true,
     };
@@ -266,8 +266,8 @@ describe('useAccessAmenitiesStore (Pases QR HMAC-SHA256, Anti-Replay y Paqueter√
     const creada = await store.crearAreaSocial({
       nombre: 'Sal√≥n de Fiestas',
       aforo_maximo: 80,
-      costo_uso_usd: '35.00',
-      deposito_garantia_usd: '100.00',
+      costo_uso_gtq: '35.00',
+      deposito_garantia_gtq: '100.00',
       requiere_solvencia_estricta: true,
     });
     expect(creada.id).toBe(1);
@@ -327,8 +327,8 @@ describe('useAccessAmenitiesStore (Pases QR HMAC-SHA256, Anti-Replay y Paqueter√
       store.crearAreaSocial({
         nombre: 'X',
         aforo_maximo: 10,
-        costo_uso_usd: '0.00',
-        deposito_garantia_usd: '0.00',
+        costo_uso_gtq: '0.00',
+        deposito_garantia_gtq: '0.00',
         requiere_solvencia_estricta: true,
       }),
     ).rejects.toThrow('err-crear-area');
@@ -338,8 +338,8 @@ describe('useAccessAmenitiesStore (Pases QR HMAC-SHA256, Anti-Replay y Paqueter√
       store.crearAreaSocial({
         nombre: 'X',
         aforo_maximo: 10,
-        costo_uso_usd: '0.00',
-        deposito_garantia_usd: '0.00',
+        costo_uso_gtq: '0.00',
+        deposito_garantia_gtq: '0.00',
         requiere_solvencia_estricta: true,
       }),
     ).rejects.toBe('raw-crear-area');

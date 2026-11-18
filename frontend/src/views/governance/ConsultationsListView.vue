@@ -160,7 +160,7 @@ async function openConsultationDetail(id: number): Promise<void> {
           rows="3"
           required
           minlength="10"
-          placeholder="Detalle el alcance técnico, presupuesto en USD y fundamento legal..."
+          placeholder="Detalle el alcance técnico, presupuesto en GTQ y fundamento legal..."
         ></textarea>
       </div>
 

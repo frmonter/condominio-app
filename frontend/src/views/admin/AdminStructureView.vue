@@ -71,7 +71,7 @@ async function handleUpdateAlicuota(): Promise<void> {
       selectedUnidadId.value,
       {
         alicuota: rawAlicuota,
-        cuota_fija_usd: rawCuotaFija ? rawCuotaFija : null,
+        cuota_fija_gtq: rawCuotaFija ? rawCuotaFija : null,
       },
       alicuotaKey.value,
     );
@@ -207,7 +207,7 @@ async function handleUpdateAlicuota(): Promise<void> {
 
           <div class="admin-structure__field">
             <label for="input-cuota-fija-unidad" class="admin-structure__label">
-              Cuota Fija Diferenciada (USD, opcional)
+              Cuota Fija Diferenciada (GTQ, opcional)
             </label>
             <input
               id="input-cuota-fija-unidad"

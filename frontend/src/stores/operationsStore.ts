@@ -12,13 +12,13 @@ export interface UnidadDTO {
   identificador: string;
   estructura_id: number;
   alicuota?: string;
-  cuota_fija_usd?: string | null;
-  credito_disponible_usd?: string;
+  cuota_fija_gtq?: string | null;
+  credito_disponible_gtq?: string;
 }
 
 export interface AlicuotaUpdateDTO {
   alicuota: string;
-  cuota_fija_usd?: string | null;
+  cuota_fija_gtq?: string | null;
 }
 
 export interface EstructuraGenerarRequestDTO {

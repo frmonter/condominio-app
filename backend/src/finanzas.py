@@ -1,4 +1,4 @@
-"""Núcleo matemático de finanzas (moneda base USD).
+"""Núcleo matemático de finanzas (moneda base GTQ).
 
 Funciones puras y deterministas para que la lógica crítica de "pago parcial vs
 total" y la conversión por la tasa del día sea verificable con pruebas de
@@ -14,8 +14,8 @@ from decimal import ROUND_HALF_UP, Decimal
 CENTAVO = Decimal("0.01")
 CUATRO_DECIMALES = Decimal("0.0001")
 
-MONEDAS_VALIDAS = frozenset({"USD", "VES"})
-METODOS_CON_REFERENCIA = frozenset({"ZELLE", "PAGO_MOVIL", "TRANSFERENCIA"})
+MONEDAS_VALIDAS = frozenset({"GTQ", "USD"})
+METODOS_CON_REFERENCIA = frozenset({"TRANSFERENCIA", "DEPOSITO", "CHEQUE", "TARJETA"})
 
 ESTADO_PENDIENTE = "PENDIENTE"
 ESTADO_PARCIAL = "PAGADO_PARCIAL"
@@ -33,16 +33,16 @@ def cuantizar(valor: Decimal) -> Decimal:
     return valor.quantize(CENTAVO, rounding=ROUND_HALF_UP)
 
 
-def convertir_a_usd(monto: Decimal, moneda: str, tasa_cambio: Decimal) -> Decimal:
-    """Convierte un monto en la moneda indicada a USD usando la tasa del día."""
+def convertir_a_gtq(monto: Decimal, moneda: str, tasa_cambio: Decimal) -> Decimal:
+    """Convierte un monto a GTQ. Para USD multiplica por la tasa del día (quetzales por 1 USD)."""
     moneda_normalizada = moneda.upper()
     if moneda_normalizada not in MONEDAS_VALIDAS:
         raise ErrorFinanciero(f"Moneda no soportada: {moneda}")
-    if moneda_normalizada == "USD":
+    if moneda_normalizada == "GTQ":
         return cuantizar(monto)
     if tasa_cambio <= 0:
         raise ErrorFinanciero("La tasa de cambio debe ser mayor que cero")
-    return cuantizar(monto / tasa_cambio)
+    return cuantizar(monto * tasa_cambio)
 
 
 def requiere_referencia(metodo_pago: str) -> bool:
@@ -56,18 +56,18 @@ def validar_referencia(metodo_pago: str, numero_referencia: str | None) -> None:
         raise ErrorFinanciero("El número de referencia es obligatorio para este método de pago")
 
 
-def calcular_saldo_pendiente(monto_usd: Decimal, monto_pagado_usd: Decimal) -> Decimal:
-    """Saldo pendiente en USD. Nunca negativo (los excedentes no generan crédito)."""
-    saldo = cuantizar(monto_usd) - cuantizar(monto_pagado_usd)
+def calcular_saldo_pendiente(monto_gtq: Decimal, monto_pagado_gtq: Decimal) -> Decimal:
+    """Saldo pendiente en GTQ. Nunca negativo (los excedentes no generan crédito)."""
+    saldo = cuantizar(monto_gtq) - cuantizar(monto_pagado_gtq)
     if saldo < CERO:
         return CERO
     return saldo
 
 
-def determinar_estado_recibo(monto_usd: Decimal, monto_pagado_usd: Decimal) -> str:
+def determinar_estado_recibo(monto_gtq: Decimal, monto_pagado_gtq: Decimal) -> str:
     """Determina el estado del recibo a partir del monto total y lo pagado."""
-    monto = cuantizar(monto_usd)
-    pagado = cuantizar(monto_pagado_usd)
+    monto = cuantizar(monto_gtq)
+    pagado = cuantizar(monto_pagado_gtq)
     if pagado >= monto:
         return ESTADO_PAGADO
     if pagado > CERO:
@@ -76,32 +76,32 @@ def determinar_estado_recibo(monto_usd: Decimal, monto_pagado_usd: Decimal) -> s
 
 
 def aplicar_pago(
-    monto_usd: Decimal,
-    monto_pagado_usd: Decimal,
-    pago_usd: Decimal,
+    monto_gtq: Decimal,
+    monto_pagado_gtq: Decimal,
+    pago_gtq: Decimal,
 ) -> tuple[Decimal, str]:
-    """Aplica un pago aprobado y devuelve (nuevo_monto_pagado_usd, nuevo_estado)."""
-    nuevo_pagado = cuantizar(monto_pagado_usd) + cuantizar(pago_usd)
-    estado = determinar_estado_recibo(monto_usd, nuevo_pagado)
+    """Aplica un pago aprobado y devuelve (nuevo_monto_pagado_gtq, nuevo_estado)."""
+    nuevo_pagado = cuantizar(monto_pagado_gtq) + cuantizar(pago_gtq)
+    estado = determinar_estado_recibo(monto_gtq, nuevo_pagado)
     return nuevo_pagado, estado
 
 
 def calcular_deuda_total(montos: Iterable[tuple[Decimal, Decimal]]) -> Decimal:
-    """Suma los saldos pendientes de una colección de (monto_usd, pagado_usd)."""
+    """Suma los saldos pendientes de una colección de (monto_gtq, pagado_gtq)."""
     total = CERO
-    for monto_usd, monto_pagado_usd in montos:
-        total += calcular_saldo_pendiente(monto_usd, monto_pagado_usd)
+    for monto_gtq, monto_pagado_gtq in montos:
+        total += calcular_saldo_pendiente(monto_gtq, monto_pagado_gtq)
     return cuantizar(total)
 
 
 def calcular_excedente_pago(
-    monto_usd: Decimal,
-    monto_pagado_usd: Decimal,
-    pago_usd: Decimal,
+    monto_gtq: Decimal,
+    monto_pagado_gtq: Decimal,
+    pago_gtq: Decimal,
 ) -> Decimal:
-    """Calcula el excedente a favor (sobrepago) que debe acreditarse en Unidad.credito_disponible_usd."""
-    saldo_pendiente = calcular_saldo_pendiente(monto_usd, monto_pagado_usd)
-    pago = cuantizar(pago_usd)
+    """Calcula el excedente a favor (sobrepago) que debe acreditarse en Unidad.credito_disponible_gtq."""
+    saldo_pendiente = calcular_saldo_pendiente(monto_gtq, monto_pagado_gtq)
+    pago = cuantizar(pago_gtq)
     if pago > saldo_pendiente:
         return cuantizar(pago - saldo_pendiente)
     return CERO
@@ -123,10 +123,10 @@ def validar_suma_alicuotas(
 
 
 def _validar_entradas_prorrateo(
-    monto_total_usd: Decimal,
+    monto_total_gtq: Decimal,
     unidades_alicuotas: Sequence[tuple[int, Decimal]],
 ) -> tuple[Decimal, list[tuple[int, Decimal]], Decimal]:
-    monto_total = cuantizar(monto_total_usd)
+    monto_total = cuantizar(monto_total_gtq)
     if monto_total < CERO:
         raise ErrorFinanciero("El monto total a prorratear no puede ser negativo")
     if not unidades_alicuotas:
@@ -145,14 +145,14 @@ def _validar_entradas_prorrateo(
 
 
 def prorratear_por_alicuotas(
-    monto_total_usd: Decimal,
+    monto_total_gtq: Decimal,
     unidades_alicuotas: Sequence[tuple[int, Decimal]],
 ) -> dict[int, Decimal]:
-    """Prorratea un monto exacto en USD usando el Método del Resto Mayor (Hamilton / Penny Allocation).
+    """Prorratea un monto exacto en GTQ usando el Método del Resto Mayor (Hamilton / Penny Allocation).
 
-    Garantiza el invariante matemático: sum(resultado.values()) == cuantizar(monto_total_usd).
+    Garantiza el invariante matemático: sum(resultado.values()) == cuantizar(monto_total_gtq).
     """
-    monto_total, ordenadas, suma_pesos = _validar_entradas_prorrateo(monto_total_usd, unidades_alicuotas)
+    monto_total, ordenadas, suma_pesos = _validar_entradas_prorrateo(monto_total_gtq, unidades_alicuotas)
     if monto_total == CERO:
         return {uid: CERO for uid, _ in ordenadas}
 
@@ -177,26 +177,26 @@ def prorratear_por_alicuotas(
 
 
 def prorratear_partes_iguales(
-    monto_total_usd: Decimal,
+    monto_total_gtq: Decimal,
     unidad_ids: Sequence[int],
 ) -> dict[int, Decimal]:
     """Divide un monto variable en partes iguales exactas distribuyendo centavos residuales por Hamilton."""
     if not unidad_ids:
         raise ErrorFinanciero("Se requiere al menos una unidad para prorratear en partes iguales")
     pesos_iguales = [(uid, Decimal("1.0000")) for uid in unidad_ids]
-    return prorratear_por_alicuotas(monto_total_usd, pesos_iguales)
+    return prorratear_por_alicuotas(monto_total_gtq, pesos_iguales)
 
 
 def aplicar_credito_disponible(
-    cargo_bruto_usd: Decimal,
-    credito_disponible_usd: Decimal,
+    cargo_bruto_gtq: Decimal,
+    credito_disponible_gtq: Decimal,
 ) -> tuple[Decimal, Decimal, Decimal]:
     """Descuenta el saldo a favor del propietario contra el cargo bruto del recibo.
 
-    Retorna (monto_neto_recibo_usd, credito_aplicado_usd, credito_restante_usd).
+    Retorna (monto_neto_recibo_gtq, credito_aplicado_gtq, credito_restante_gtq).
     """
-    cargo = cuantizar(cargo_bruto_usd)
-    credito = cuantizar(credito_disponible_usd)
+    cargo = cuantizar(cargo_bruto_gtq)
+    credito = cuantizar(credito_disponible_gtq)
     if cargo < CERO or credito < CERO:
         raise ErrorFinanciero("Los montos de cargo y crédito no pueden ser negativos")
     credito_aplicado = min(cargo, credito)

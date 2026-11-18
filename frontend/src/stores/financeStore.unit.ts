@@ -2,25 +2,27 @@ import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiClient, ApiError } from '../services/apiClient';
 import {
-  convertUsdToVes,
-  convertVesToUsd,
+  convertGtqToUsd,
+  convertUsdToGtq,
   determinePaymentCoverage,
   useFinanceStore,
 } from './financeStore';
 
-describe('financeStore — Patrón No Destructivo, Conversiones BCV y Candado Contable', () => {
+describe('financeStore — Patrón No Destructivo, Conversiones GTQ/USD y Candado Contable', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.restoreAllMocks();
   });
 
-  it('convierte montos entre USD y VES y determina cobertura total vs abono parcial', () => {
-    expect(convertUsdToVes('50.00', '36.50')).toBe('1825.00');
-    expect(convertUsdToVes(50, 36.5)).toBe('1825.00');
-    expect(convertUsdToVes('invalid', '36.50')).toBe('0.00');
-    expect(convertVesToUsd('365.00', '36.50')).toBe('10.00');
-    expect(convertVesToUsd(365, 36.5)).toBe('10.00');
-    expect(convertVesToUsd('100', '0')).toBe('0.00');
+  it('convierte montos entre GTQ y USD y determina cobertura total vs abono parcial', () => {
+    expect(convertGtqToUsd('770.00', '7.70')).toBe('100.00');
+    expect(convertGtqToUsd(770, 7.7)).toBe('100.00');
+    expect(convertGtqToUsd('invalid', '7.70')).toBe('0.00');
+    expect(convertUsdToGtq('10.00', '7.70')).toBe('77.00');
+    expect(convertUsdToGtq(10, 7.7)).toBe('77.00');
+    expect(convertUsdToGtq('100', '0')).toBe('0.00');
+    expect(convertUsdToGtq('-5', '7.70')).toBe('0.00');
+    expect(convertGtqToUsd(-5, 7.7)).toBe('0.00');
 
     expect(determinePaymentCoverage(50, 50)).toBe('PAGO_TOTAL');
     expect(determinePaymentCoverage(60, 50)).toBe('PAGO_TOTAL');
@@ -31,19 +33,19 @@ describe('financeStore — Patrón No Destructivo, Conversiones BCV y Candado Co
   it('carga datos del dashboard y preserva estado previo marcando isStale=true ante fallo de red', async () => {
     const store = useFinanceStore();
     vi.spyOn(apiClient, 'get')
-      .mockResolvedValueOnce({ id: 2, fecha: '2026-10-30', tasa_usd_ves: '40.00' })
+      .mockResolvedValueOnce({ id: 2, fecha: '2026-10-30', tasa_usd_gtq: '40.00' })
       .mockResolvedValueOnce({
-        deuda_total_usd: '120.00',
-        total_egresos_usd: '450.00',
+        deuda_total_gtq: '120.00',
+        total_egresos_gtq: '450.00',
         gastos_por_categoria: { 'Bombas de Agua': '300.00', Vigilancia: '150.00' },
         estado_cobranza: [
-          { unidad_id: 1, periodo: '2026-10', estado: 'PENDIENTE', saldo_usd: '120.00' },
+          { unidad_id: 1, periodo: '2026-10', estado: 'PENDIENTE', saldo_gtq: '120.00' },
         ],
       });
 
     await store.fetchDashboardData();
     expect(store.activeRateValue).toBe('40.00');
-    expect(store.data.resumen?.deuda_total_usd).toBe('120.00');
+    expect(store.data.resumen?.deuda_total_gtq).toBe('120.00');
     expect(store.isStale).toBe(false);
 
     // Simular caída de red posterior: NO debe destruir tasaActiva ni resumen
@@ -52,7 +54,7 @@ describe('financeStore — Patrón No Destructivo, Conversiones BCV y Candado Co
 
     expect(store.isStale).toBe(true);
     expect(store.activeRateValue).toBe('40.00');
-    expect(store.data.resumen?.deuda_total_usd).toBe('120.00');
+    expect(store.data.resumen?.deuda_total_gtq).toBe('120.00');
     expect(store.errorMessage).toContain('Mostrando últimos datos conocidos');
 
     vi.spyOn(apiClient, 'get').mockRejectedValueOnce(new ApiError(502, 'Bad Gateway'));
@@ -68,10 +70,10 @@ describe('financeStore — Patrón No Destructivo, Conversiones BCV y Candado Co
         recibo_id: 1,
         usuario_id: 5,
         monto: '1825.00',
-        moneda: 'VES',
-        monto_usd: '50.00',
-        tasa_cambio: '36.50',
-        metodo_pago: 'PAGO_MOVIL',
+        moneda: 'USD',
+        monto_gtq: '50.00',
+        tasa_cambio: '7.70',
+        metodo_pago: 'DEPOSITO',
         numero_referencia: '998877',
         url_comprobante: null,
         estado: 'EN_REVISION',
@@ -93,29 +95,29 @@ describe('financeStore — Patrón No Destructivo, Conversiones BCV y Candado Co
     expect(store.errorMessage).toContain('Mostrando lista en caché');
   });
 
-  it('registra tasa BCV, egreso y pago idempotente actualizando el estado', async () => {
+  it('registra tipo de cambio, egreso y pago idempotente actualizando el estado', async () => {
     const store = useFinanceStore();
     const postSpy = vi
       .spyOn(apiClient, 'post')
-      .mockResolvedValueOnce({ id: 5, fecha: '2026-10-30', tasa_usd_ves: '42.15' })
-      .mockResolvedValueOnce({ id: 9, monto_usd: '80.00' })
-      .mockResolvedValueOnce({ id: 10, monto_usd: '80.00' })
+      .mockResolvedValueOnce({ id: 5, fecha: '2026-10-30', tasa_usd_gtq: '42.15' })
+      .mockResolvedValueOnce({ id: 9, monto_gtq: '80.00' })
+      .mockResolvedValueOnce({ id: 10, monto_gtq: '80.00' })
       .mockResolvedValueOnce({
         id: 77,
         recibo_id: 1,
         usuario_id: 2,
         monto: '50.00',
-        moneda: 'USD',
-        monto_usd: '50.00',
+        moneda: 'GTQ',
+        monto_gtq: '50.00',
         tasa_cambio: '42.15',
-        metodo_pago: 'ZELLE',
-        numero_referencia: 'ZELLE-12345',
+        metodo_pago: 'TRANSFERENCIA',
+        numero_referencia: 'TRF-12345',
         url_comprobante: null,
         estado: 'EN_REVISION',
       });
 
     const tasa = await store.registrarTasa('42.15', '2026-10-30');
-    expect(tasa.tasa_usd_ves).toBe('42.15');
+    expect(tasa.tasa_usd_gtq).toBe('42.15');
 
     const egreso = await store.registrarEgreso(
       {
@@ -123,7 +125,7 @@ describe('financeStore — Patrón No Destructivo, Conversiones BCV y Candado Co
         categoria: 'Ascensores',
         descripcion: 'Mantenimiento preventivo mensual',
         monto: '80.00',
-        moneda: 'USD',
+        moneda: 'GTQ',
       },
       'idemp-egreso-001',
     );
@@ -139,7 +141,7 @@ describe('financeStore — Patrón No Destructivo, Conversiones BCV y Candado Co
       categoria: 'Ascensores',
       descripcion: 'Mantenimiento preventivo mensual',
       monto: '80.00',
-      moneda: 'USD',
+      moneda: 'GTQ',
     });
     expect(egresoAuto).toBeDefined();
     expect(postSpy).toHaveBeenLastCalledWith(
@@ -152,9 +154,9 @@ describe('financeStore — Patrón No Destructivo, Conversiones BCV y Candado Co
       {
         recibo_id: 1,
         monto: '50.00',
-        moneda: 'USD',
-        metodo_pago: 'ZELLE',
-        numero_referencia: 'ZELLE-12345',
+        moneda: 'GTQ',
+        metodo_pago: 'TRANSFERENCIA',
+        numero_referencia: 'TRF-12345',
       },
       'idemp-uuid-001',
     );
@@ -170,10 +172,10 @@ describe('financeStore — Patrón No Destructivo, Conversiones BCV y Candado Co
         recibo_id: 1,
         usuario_id: 2,
         monto: '50.00',
-        moneda: 'USD',
-        monto_usd: '50.00',
-        tasa_cambio: '36.50',
-        metodo_pago: 'ZELLE',
+        moneda: 'GTQ',
+        monto_gtq: '50.00',
+        tasa_cambio: '7.70',
+        metodo_pago: 'TRANSFERENCIA',
         numero_referencia: 'REF-11',
         url_comprobante: null,
         estado: 'EN_REVISION',
@@ -183,10 +185,10 @@ describe('financeStore — Patrón No Destructivo, Conversiones BCV y Candado Co
         recibo_id: 1,
         usuario_id: 2,
         monto: '30.00',
-        moneda: 'USD',
-        monto_usd: '30.00',
-        tasa_cambio: '36.50',
-        metodo_pago: 'ZELLE',
+        moneda: 'GTQ',
+        monto_gtq: '30.00',
+        tasa_cambio: '7.70',
+        metodo_pago: 'TRANSFERENCIA',
         numero_referencia: 'REF-12',
         url_comprobante: null,
         estado: 'EN_REVISION',
@@ -242,8 +244,8 @@ describe('financeStore — Patrón No Destructivo, Conversiones BCV y Candado Co
     await expect(store.registrarTasa('0')).rejects.toThrow('Tasa inválida');
 
     vi.spyOn(apiClient, 'post').mockRejectedValueOnce(new Error('Fallo desconocido'));
-    await expect(store.registrarTasa('36.50')).rejects.toThrow('Fallo desconocido');
-    expect(store.errorMessage).toContain('No se pudo registrar la tasa BCV');
+    await expect(store.registrarTasa('7.70')).rejects.toThrow('Fallo desconocido');
+    expect(store.errorMessage).toContain('No se pudo registrar la tasa de cambio');
 
     vi.spyOn(apiClient, 'post').mockRejectedValueOnce(new ApiError(400, 'Egreso rechazado'));
     await expect(
@@ -252,7 +254,7 @@ describe('financeStore — Patrón No Destructivo, Conversiones BCV y Candado Co
         categoria: 'Agua',
         descripcion: 'Filtro',
         monto: '10',
-        moneda: 'USD',
+        moneda: 'GTQ',
       }),
     ).rejects.toThrow('Egreso rechazado');
 
@@ -263,7 +265,7 @@ describe('financeStore — Patrón No Destructivo, Conversiones BCV y Candado Co
         categoria: 'Agua',
         descripcion: 'Filtro',
         monto: '10',
-        moneda: 'USD',
+        moneda: 'GTQ',
       }),
     ).rejects.toThrow('Fallo red egreso');
 
@@ -273,7 +275,7 @@ describe('financeStore — Patrón No Destructivo, Conversiones BCV y Candado Co
         {
           recibo_id: 1,
           monto: '10',
-          moneda: 'USD',
+          moneda: 'GTQ',
           metodo_pago: 'EFECTIVO',
           numero_referencia: null,
         },
@@ -287,7 +289,7 @@ describe('financeStore — Patrón No Destructivo, Conversiones BCV y Candado Co
         {
           recibo_id: 1,
           monto: '10',
-          moneda: 'USD',
+          moneda: 'GTQ',
           metodo_pago: 'EFECTIVO',
           numero_referencia: null,
         },
@@ -325,7 +327,7 @@ describe('financeStore — Patrón No Destructivo, Conversiones BCV y Candado Co
           nombre: 'Fondo de Reserva Legal',
           tipo: 'RESERVA_LEGAL',
           porcentaje_recargo: '10.00',
-          saldo_actual_usd: '150.00',
+          saldo_actual_gtq: '150.00',
           es_activo: true,
         },
       ])
@@ -335,10 +337,10 @@ describe('financeStore — Patrón No Destructivo, Conversiones BCV y Candado Co
         identificador_unidad: 'Apto 1-A',
         alicuota_aplicada: '25.0000',
         periodo: '2026-10',
-        monto_usd: '25.00',
-        monto_pagado_usd: '0.00',
-        saldo_pendiente_usd: '25.00',
-        credito_descontado_usd: '0.00',
+        monto_gtq: '25.00',
+        monto_pagado_gtq: '0.00',
+        saldo_pendiente_gtq: '25.00',
+        credito_descontado_gtq: '0.00',
         estado: 'PENDIENTE',
         bloqueado: false,
         items: [],
@@ -350,7 +352,7 @@ describe('financeStore — Patrón No Destructivo, Conversiones BCV y Candado Co
         identificador_unidad: 'Apto 1-A',
         fecha_vencimiento: '2026-10-31',
         vigente: true,
-        deuda_verificada_usd: '0.00',
+        deuda_verificada_gtq: '0.00',
         firma_hmac: 'sig123',
       });
 
@@ -369,20 +371,20 @@ describe('financeStore — Patrón No Destructivo, Conversiones BCV y Candado Co
         nombre: 'Caja Chica',
         tipo: 'CAJA_CHICA',
         porcentaje_recargo: '5.00',
-        saldo_actual_usd: '0.00',
+        saldo_actual_gtq: '0.00',
         es_activo: true,
       })
       .mockResolvedValueOnce({
         periodo: '2026-10',
         modalidad: 'ALICUOTA',
         recibos_emitidos: 4,
-        total_egresos_comunes_usd: '100.00',
-        recargo_fondo_reserva_usd: '10.00',
-        cuota_extraordinaria_total_usd: '0.00',
-        total_facturado_bruto_usd: '110.00',
-        total_credito_descontado_usd: '0.00',
-        total_facturado_neto_usd: '110.00',
-        superavit_conciliado_fondo_usd: '0.00',
+        total_egresos_comunes_gtq: '100.00',
+        recargo_fondo_reserva_gtq: '10.00',
+        cuota_extraordinaria_total_gtq: '0.00',
+        total_facturado_bruto_gtq: '110.00',
+        total_credito_descontado_gtq: '0.00',
+        total_facturado_neto_gtq: '110.00',
+        superavit_conciliado_fondo_gtq: '0.00',
       })
       .mockResolvedValueOnce({
         id: 1,
@@ -392,7 +394,7 @@ describe('financeStore — Patrón No Destructivo, Conversiones BCV y Candado Co
         emitido_por_id: 1,
         fecha_emision: '2026-10-30T10:00:00Z',
         fecha_vencimiento: '2026-10-31',
-        deuda_verificada_usd: '0.00',
+        deuda_verificada_gtq: '0.00',
         firma_hmac: 'sig123',
         qr_token: 'payload.sig123',
       });

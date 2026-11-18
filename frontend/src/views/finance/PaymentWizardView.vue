@@ -4,8 +4,8 @@ import { useRouter } from 'vue-router';
 import AppShellLayout from '../../components/layout/AppShellLayout.vue';
 import { useIdempotency } from '../../composables/useIdempotency';
 import {
-  convertUsdToVes,
-  convertVesToUsd,
+  convertGtqToUsd,
+  convertUsdToGtq,
   determinePaymentCoverage,
   useFinanceStore,
   type MetodoPago,
@@ -19,10 +19,10 @@ const { currentKey, isSubmitting, executeWithIdempotency } = useIdempotency();
 
 const currentStep = ref<1 | 2 | 3>(1);
 const reciboId = ref(1);
-const saldoReciboUsd = ref(50);
-const moneda = ref<MonedaPago>('VES');
-const monto = ref('1825.00');
-const metodoPago = ref<MetodoPago>('PAGO_MOVIL');
+const saldoReciboGtq = ref(500);
+const moneda = ref<MonedaPago>('GTQ');
+const monto = ref('500.00');
+const metodoPago = ref<MetodoPago>('TRANSFERENCIA');
 const numeroReferencia = ref('');
 const urlComprobante = ref('');
 const selectedFileName = ref<string | null>(null);
@@ -31,26 +31,26 @@ const successBanner = ref<string | null>(null);
 
 const requiresReference = computed(() => metodoPago.value !== 'EFECTIVO');
 
+const equivalentGtq = computed(() => {
+  const rawMonto = String(monto.value);
+  if (moneda.value === 'GTQ') {
+    const parsed = Number.parseFloat(rawMonto);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed.toFixed(2) : '0.00';
+  }
+  return convertUsdToGtq(rawMonto, financeStore.activeRateValue);
+});
+
 const equivalentUsd = computed(() => {
   const rawMonto = String(monto.value);
   if (moneda.value === 'USD') {
     const parsed = Number.parseFloat(rawMonto);
     return Number.isFinite(parsed) && parsed > 0 ? parsed.toFixed(2) : '0.00';
   }
-  return convertVesToUsd(rawMonto, financeStore.activeRateValue);
-});
-
-const equivalentVes = computed(() => {
-  const rawMonto = String(monto.value);
-  if (moneda.value === 'VES') {
-    const parsed = Number.parseFloat(rawMonto);
-    return Number.isFinite(parsed) && parsed > 0 ? parsed.toFixed(2) : '0.00';
-  }
-  return convertUsdToVes(rawMonto, financeStore.activeRateValue);
+  return convertGtqToUsd(rawMonto, financeStore.activeRateValue);
 });
 
 const coverageType = computed(() =>
-  determinePaymentCoverage(Number.parseFloat(equivalentUsd.value) || 0, saldoReciboUsd.value),
+  determinePaymentCoverage(Number.parseFloat(equivalentGtq.value) || 0, saldoReciboGtq.value),
 );
 
 function goToStep2(): void {
@@ -85,7 +85,7 @@ function goToStep3(): void {
   validationError.value = null;
   if (requiresReference.value && numeroReferencia.value.trim().length < 4) {
     validationError.value =
-      'El número de referencia bancaria es obligatorio para transferencias, Pago Móvil y Zelle.';
+      'El número de referencia bancaria es obligatorio para transferencias, depósitos, cheques y tarjeta.';
     return;
   }
   currentStep.value = 3;
@@ -164,25 +164,25 @@ async function submitPayment(): Promise<void> {
           <div class="field-group">
             <label for="select-recibo" class="field-label">Recibo a abonar</label>
             <select id="select-recibo" v-model.number="reciboId" class="field-input">
-              <option :value="1">Recibo #1 — Octubre 2026 (Saldo: {{ saldoReciboUsd }} USD)</option>
+              <option :value="1">Recibo #1 — Octubre 2026 (Saldo: {{ saldoReciboGtq }} GTQ)</option>
             </select>
           </div>
 
           <div class="field-group">
             <label for="select-moneda" class="field-label">Moneda del pago</label>
             <select id="select-moneda" v-model="moneda" class="field-input">
-              <option value="VES">
-                Bolívares (VES — Tasa BCV {{ financeStore.activeRateValue }})
+              <option value="GTQ">Quetzales (GTQ)</option>
+              <option value="USD">
+                Dólares (USD — Tipo de cambio Q{{ financeStore.activeRateValue }} por US$1)
               </option>
-              <option value="USD">Dólares (USD)</option>
             </select>
           </div>
 
           <div class="field-group">
             <label for="step-1-monto" class="field-label">Monto exacto pagado</label>
             <p id="monto-hint" class="field-hint">
-              Equivalente calculado: <strong>{{ equivalentUsd }} USD</strong> ({{ equivalentVes }}
-              VES)
+              Equivalente calculado: <strong>{{ equivalentGtq }} GTQ</strong> ({{ equivalentUsd }}
+              USD)
             </p>
             <input
               id="step-1-monto"
@@ -213,10 +213,11 @@ async function submitPayment(): Promise<void> {
           <div class="field-group">
             <label for="step-2-metodo" class="field-label">Método de pago utilizado</label>
             <select id="step-2-metodo" v-model="metodoPago" class="field-input">
-              <option value="PAGO_MOVIL">Pago Móvil</option>
+              <option value="DEPOSITO">Depósito Bancario (boleta)</option>
               <option value="TRANSFERENCIA">Transferencia Bancaria</option>
-              <option value="ZELLE">Zelle (USD)</option>
-              <option value="EFECTIVO">Efectivo en Taquilla</option>
+              <option value="CHEQUE">Cheque</option>
+              <option value="TARJETA">Tarjeta de Crédito/Débito</option>
+              <option value="EFECTIVO">Efectivo en Administración</option>
             </select>
           </div>
 
@@ -276,7 +277,7 @@ async function submitPayment(): Promise<void> {
             </div>
             <div class="summary-list__row">
               <dt>Monto reportado:</dt>
-              <dd>{{ monto }} {{ moneda }} ({{ equivalentUsd }} USD)</dd>
+              <dd>{{ monto }} {{ moneda }} ({{ equivalentGtq }} GTQ)</dd>
             </div>
             <div class="summary-list__row">
               <dt>Cobertura:</dt>

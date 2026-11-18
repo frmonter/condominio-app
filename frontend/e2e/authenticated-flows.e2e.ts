@@ -79,7 +79,7 @@ test.describe('Flujos E2E Autenticados y Geometría Anti-JSDOM (Hito 8)', () => 
 
     await propietario.attemptsTo(
       NavigateTo.path('/dashboard'),
-      ReportPayment.amountWithReference('1825.00', 'PM-99887766'),
+      ReportPayment.amountWithReference('500.00', 'DEP-99887766'),
     );
     expect(await propietario.asks(CurrentPathname.value())).toBe('/dashboard');
     expect(mockState.capturedIdempotencyKeys.length).toBeGreaterThanOrEqual(1);

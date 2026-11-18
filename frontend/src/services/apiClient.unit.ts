@@ -104,7 +104,7 @@ describe('Cliente HTTP Resiliente (apiClient.ts)', () => {
     );
     await expect(apiClient.get<{ ok: boolean }>('/api/health')).resolves.toEqual({ ok: true });
     await expect(
-      apiClient.post<{ ok: boolean }>('/api/finanzas/tasa', { tasa_usd_ves: '36.50' }),
+      apiClient.post<{ ok: boolean }>('/api/finanzas/tasa', { tasa_usd_gtq: '7.70' }),
     ).resolves.toEqual({
       ok: true,
     });

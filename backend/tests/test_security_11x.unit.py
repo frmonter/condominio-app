@@ -312,12 +312,12 @@ def test_mass_assignment_extra_forbid_on_all_input_schemas() -> None:
     with pytest.raises(ValidationError):
         LoginData.model_validate({"correo": "a@test.com", "password": "p", "es_activo": True})
     with pytest.raises(ValidationError):
-        TasaCambioCreate.model_validate({"tasa_usd_ves": "36.5", "extra": 1})
+        TasaCambioCreate.model_validate({"tasa_usd_gtq": "36.5", "extra": 1})
     with pytest.raises(ValidationError):
-        ReciboCreate.model_validate({"unidad_id": 1, "periodo": "2026-10", "monto_usd": "10.00", "bloqueado": True})
+        ReciboCreate.model_validate({"unidad_id": 1, "periodo": "2026-10", "monto_gtq": "10.00", "bloqueado": True})
     with pytest.raises(ValidationError):
         PagoReportar.model_validate(
-            {"recibo_id": 1, "monto": "10.00", "moneda": "USD", "metodo_pago": "EFECTIVO", "estado": "APROBADO"}
+            {"recibo_id": 1, "monto": "10.00", "moneda": "GTQ", "metodo_pago": "EFECTIVO", "estado": "APROBADO"}
         )
     with pytest.raises(ValidationError):
         PagoRechazo.model_validate({"motivo": "X", "extra": "Y"})
@@ -328,7 +328,7 @@ def test_mass_assignment_extra_forbid_on_all_input_schemas() -> None:
                 "categoria": "A",
                 "descripcion": "B",
                 "monto": "10.00",
-                "moneda": "USD",
+                "moneda": "GTQ",
                 "bloqueado": True,
             }
         )
@@ -337,7 +337,7 @@ def test_mass_assignment_extra_forbid_on_all_input_schemas() -> None:
     with pytest.raises(ValidationError):
         AlicuotaUpdateRequest.model_validate({"alicuota": "10.0000", "extra": 1})
     with pytest.raises(ValidationError):
-        FondoCondominioCreate.model_validate({"nombre": "Fondo Reserva", "saldo_actual_usd": "9999.00"})
+        FondoCondominioCreate.model_validate({"nombre": "Fondo Reserva", "saldo_actual_gtq": "9999.00"})
     with pytest.raises(ValidationError):
         FacturarPeriodoRequest.model_validate({"periodo": "2026-10", "modalidad": "ALICUOTA", "hack": True})
 

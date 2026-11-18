@@ -3,14 +3,14 @@ import { computed } from 'vue';
 
 export interface CategorySlice {
   category: string;
-  amountUsd: number;
+  amountGtq: number;
   percentage: number;
   color: string;
 }
 
 const props = defineProps<{
   expensesByCategory: Record<string, string>;
-  totalExpensesUsd: string;
+  totalExpensesGtq: string;
 }>();
 
 const PALETTE = ['#0369a1', '#0d9488', '#6366f1', '#f59e0b', '#ec4899'];
@@ -22,11 +22,11 @@ const slices = computed<CategorySlice[]>(() => {
     return [];
   }
   return entries.map(([category, rawVal], idx) => {
-    const amountUsd = Number.parseFloat(rawVal);
-    const percentage = Math.round((amountUsd / total) * 100);
+    const amountGtq = Number.parseFloat(rawVal);
+    const percentage = Math.round((amountGtq / total) * 100);
     return {
       category,
-      amountUsd,
+      amountGtq,
       percentage,
       color: PALETTE[idx % PALETTE.length]!,
     };
@@ -42,7 +42,7 @@ const slices = computed<CategorySlice[]>(() => {
   >
     <header class="expenses-card__header">
       <h2 class="expenses-card__title">Distribución de Egresos</h2>
-      <strong class="expenses-card__total">Total: {{ totalExpensesUsd }} USD</strong>
+      <strong class="expenses-card__total">Total: {{ totalExpensesGtq }} GTQ</strong>
     </header>
 
     <div v-if="slices.length > 0" class="expenses-card__grid">
@@ -72,7 +72,7 @@ const slices = computed<CategorySlice[]>(() => {
           <span class="expenses-legend__dot" :style="{ backgroundColor: slice.color }" />
           <span class="expenses-legend__name">{{ slice.category }}</span>
           <strong class="expenses-legend__val">
-            {{ slice.amountUsd.toFixed(2) }} USD ({{ slice.percentage }}%)
+            {{ slice.amountGtq.toFixed(2) }} GTQ ({{ slice.percentage }}%)
           </strong>
         </li>
       </ul>

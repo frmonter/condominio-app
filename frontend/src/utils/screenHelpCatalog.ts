@@ -105,13 +105,13 @@ export function getScreenHelp(rawPath: string, userRole?: RolUsuarioAyuda): Scre
           purpose:
             'Vista integral del estado financiero del condominio, morosidad colectiva y egresos del mes.',
           steps: [
-            'Revise la tasa oficial BCV del día en el indicador superior.',
+            'Revise el tipo de cambio del día en el indicador superior.',
             'Consulte el Semáforo de Cobranza para identificar unidades solventes y morosas.',
             'Examine el desglose de egresos clasificados en el gráfico interactivo.',
             'Utilice la barra lateral para acceder a la aprobación de pagos o cierre contable.',
           ],
           tips: [
-            'Mantenga la tasa BCV actualizada antes de revisar comprobantes en bolívares.',
+            'Mantenga el tipo de cambio actualizado antes de revisar comprobantes en dólares.',
             'El Candado Contable se ejecuta una vez conciliados todos los pagos del mes.',
           ],
         };
@@ -137,7 +137,7 @@ export function getScreenHelp(rawPath: string, userRole?: RolUsuarioAyuda): Scre
           'Información centralizada del estado de cuenta de su inmueble, tasa oficial y avisos comunitarios.',
         steps: [
           'Verifique el estado de solvencia de su apartamento en la tarjeta principal.',
-          'Consulte la tasa oficial de cambio BCV vigente.',
+          'Consulte el tipo de cambio vigente (quetzales por dólar).',
           'Revise los comunicados oficiales emitidos por la Junta de Condominio.',
           'Pulse el botón flotante "Reportar Pago" para registrar su abono o pago total.',
         ],
@@ -153,8 +153,8 @@ export function getScreenHelp(rawPath: string, userRole?: RolUsuarioAyuda): Scre
         purpose:
           'Permite enviar los datos de su transferencia, pago móvil o depósito para su conciliación.',
         steps: [
-          'Paso 1 (Monto y Moneda): Ingrese la cantidad a pagar y seleccione si es en Bolívares (VES) o Dólares (USD). Verifique si califica como Pago Total o Abono Parcial.',
-          'Paso 2 (Método y Referencia): Elija la vía de pago (Pago Móvil, Transferencia, Zelle o Efectivo), coloque el número de referencia y adjunte la captura en formato JPG, PNG o AVIF (máx. 2 MB).',
+          'Paso 1 (Monto y Moneda): Ingrese la cantidad a pagar y seleccione si es en Quetzales (GTQ) o Dólares (USD). Verifique si califica como Pago Total o Abono Parcial.',
+          'Paso 2 (Método y Referencia): Elija la vía de pago (Depósito, Transferencia, Cheque, Tarjeta o Efectivo), coloque el número de referencia y adjunte la captura en formato JPG, PNG o AVIF (máx. 2 MB).',
           'Paso 3 (Confirmación): Verifique los datos en el resumen y presione "Confirmar y Enviar Pago".',
         ],
         tips: [
@@ -169,7 +169,7 @@ export function getScreenHelp(rawPath: string, userRole?: RolUsuarioAyuda): Scre
         purpose:
           'Emisión y validación del documento oficial que acredita que la unidad está al día con el condominio.',
         steps: [
-          'Compruebe que el balance de su unidad esté en $0.00 USD (solvente).',
+          'Compruebe que el balance de su unidad esté en Q0.00 (solvente).',
           'Presione el botón "Emitir Certificado Digital".',
           'Visualice el folio único, el código QR y la firma criptográfica HMAC-SHA256.',
           'Descargue o imprima el comprobante para trámites legales o mudanzas.',
@@ -186,7 +186,7 @@ export function getScreenHelp(rawPath: string, userRole?: RolUsuarioAyuda): Scre
         purpose:
           'Bandeja de verificación donde la Tesorería valida y concilia los comprobantes recibidos.',
         steps: [
-          'Examine cada comprobante en la lista: monto en VES/USD, método, referencia y foto adjunta.',
+          'Examine cada comprobante en la lista: monto en USD/GTQ, método, referencia y foto adjunta.',
           'Pulse "Aprobar" si los fondos ya están confirmados en la cuenta bancaria del condominio.',
           'Si el comprobante es ilegible o el monto no coincide, presione "Rechazar" e indique obligatoriamente el motivo explicativo.',
         ],
@@ -202,7 +202,7 @@ export function getScreenHelp(rawPath: string, userRole?: RolUsuarioAyuda): Scre
         purpose:
           'Administración de egresos comunitarios, fijación de tasa oficial y ejecución del Candado Contable.',
         steps: [
-          'Registre la tasa de cambio oficial BCV vigente para la conversión multimoneda.',
+          'Registre el tipo de cambio de referencia del Banguat (quetzales por US$1) para la conversión multimoneda.',
           'Incorpore los egresos y gastos comunes del mes con su soporte y categoría.',
           'Verifique que no queden pagos pendientes de conciliar en la mesa de revisión.',
           'Ejecute el "Candado Contable" para sellar de forma inmutable el período contable.',
@@ -220,7 +220,7 @@ export function getScreenHelp(rawPath: string, userRole?: RolUsuarioAyuda): Scre
           'Emisión masiva de recibos de condominio según Ley de Propiedad Horizontal (Alícuotas, Cuota Fija o Partes Iguales).',
         steps: [
           'Indique el período a facturar (ejemplo: 2026-11).',
-          'Seleccione la modalidad de cálculo: Por Alícuota (Hamilton), Cuota Fija USD o Partes Iguales.',
+          'Seleccione la modalidad de cálculo: Por Alícuota (Hamilton), Cuota Fija GTQ o Partes Iguales.',
           'Revise la simulación del total de gastos comunes a prorratear entre las unidades.',
           'Pulse "Generar Facturación Masiva" para crear los recibos de todas las unidades.',
         ],

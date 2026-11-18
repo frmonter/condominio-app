@@ -50,8 +50,8 @@ class Unidad(Base):
     identificador: Mapped[str] = mapped_column(String, unique=True, index=True)
     estructura_id: Mapped[int] = mapped_column(ForeignKey("estructuras.id"))
     alicuota: Mapped[Decimal] = mapped_column(Numeric(7, 4), default=Decimal("0.0000"), server_default="0.0000")
-    cuota_fija_usd: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True, default=None)
-    credito_disponible_usd: Mapped[Decimal] = mapped_column(
+    cuota_fija_gtq: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True, default=None)
+    credito_disponible_gtq: Mapped[Decimal] = mapped_column(
         Numeric(12, 2), default=Decimal("0.00"), server_default="0.00"
     )
 
@@ -70,13 +70,13 @@ class ContratoOcupacion(Base):
 
 
 class TasaCambio(Base):
-    """Tasa de cambio USD/VES registrada por día (USD es la moneda base contable)."""
+    """Tipo de cambio del día: quetzales por 1 USD (GTQ es la moneda base contable)."""
 
     __tablename__ = "tasas_cambio"
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     condominio_id: Mapped[int] = mapped_column(Integer, default=1, server_default="1", nullable=False, index=True)
     fecha: Mapped[date_type] = mapped_column(Date, unique=True, index=True)
-    tasa_usd_ves: Mapped[Decimal] = mapped_column(Numeric(14, 4), nullable=False)
+    tasa_usd_gtq: Mapped[Decimal] = mapped_column(Numeric(14, 4), nullable=False)
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -89,8 +89,8 @@ class Recibo(Base):
     condominio_id: Mapped[int] = mapped_column(Integer, default=1, server_default="1", nullable=False, index=True)
     unidad_id: Mapped[int] = mapped_column(ForeignKey("unidades.id"))
     periodo: Mapped[str] = mapped_column(String(7), index=True)
-    monto_usd: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
-    monto_pagado_usd: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0.00"))
+    monto_gtq: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    monto_pagado_gtq: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0.00"))
     estado: Mapped[str] = mapped_column(String, default="PENDIENTE")
     bloqueado: Mapped[bool] = mapped_column(Boolean, default=False)
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -116,7 +116,7 @@ class PagoReportado(Base):
     usuario_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id"))
     monto: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     moneda: Mapped[str] = mapped_column(String(3))
-    monto_usd: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    monto_gtq: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     tasa_cambio: Mapped[Decimal] = mapped_column(Numeric(14, 4), nullable=False)
     metodo_pago: Mapped[str] = mapped_column(String)
     numero_referencia: Mapped[str | None] = mapped_column(String, nullable=True)
@@ -136,7 +136,7 @@ class Egreso(Base):
     descripcion: Mapped[str] = mapped_column(String)
     monto: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     moneda: Mapped[str] = mapped_column(String(3))
-    monto_usd: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    monto_gtq: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     tasa_cambio: Mapped[Decimal] = mapped_column(Numeric(14, 4), nullable=False)
     url_factura: Mapped[str | None] = mapped_column(String, nullable=True)
     incidencia_id: Mapped[int | None] = mapped_column(ForeignKey("incidencias.id"), nullable=True, default=None)
@@ -282,7 +282,7 @@ class FondoCondominio(Base):
     nombre: Mapped[str] = mapped_column(String(100), unique=True, index=True)
     tipo: Mapped[str] = mapped_column(String(30), default="RESERVA_LEGAL")
     porcentaje_recargo: Mapped[Decimal] = mapped_column(Numeric(5, 2), default=Decimal("10.00"))
-    saldo_actual_usd: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=Decimal("0.00"))
+    saldo_actual_gtq: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=Decimal("0.00"))
     es_activo: Mapped[bool] = mapped_column(Boolean, default=True)
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
@@ -296,7 +296,7 @@ class ReciboItem(Base):
     recibo_id: Mapped[int] = mapped_column(ForeignKey("recibos.id", ondelete="CASCADE"), index=True)
     tipo_item: Mapped[str] = mapped_column(String(30))
     descripcion: Mapped[str] = mapped_column(String(255))
-    monto_usd: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    monto_gtq: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -314,7 +314,7 @@ class CertificadoSolvencia(Base):
     emitido_por_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id"))
     fecha_emision: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     fecha_vencimiento: Mapped[date_type] = mapped_column(Date, nullable=False)
-    deuda_verificada_usd: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0.00"))
+    deuda_verificada_gtq: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0.00"))
     firma_hmac: Mapped[str] = mapped_column(String(64), nullable=False)
 
 
@@ -428,8 +428,8 @@ class AreaSocial(Base):
     condominio_id: Mapped[int] = mapped_column(Integer, default=1, server_default="1", nullable=False, index=True)
     nombre: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
     aforo_maximo: Mapped[int] = mapped_column(Integer, nullable=False)
-    costo_uso_usd: Mapped[Decimal] = mapped_column(Numeric(10, 2), default=Decimal("0.00"), nullable=False)
-    deposito_garantia_usd: Mapped[Decimal] = mapped_column(Numeric(10, 2), default=Decimal("0.00"), nullable=False)
+    costo_uso_gtq: Mapped[Decimal] = mapped_column(Numeric(10, 2), default=Decimal("0.00"), nullable=False)
+    deposito_garantia_gtq: Mapped[Decimal] = mapped_column(Numeric(10, 2), default=Decimal("0.00"), nullable=False)
     requiere_solvencia_estricta: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     es_activa: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 

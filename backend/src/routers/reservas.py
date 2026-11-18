@@ -86,13 +86,13 @@ async def _verificar_candado_solvencia_estricta(db: AsyncSession, unidad_id: int
         return
     res_recibos = await db.execute(select(Recibo).where(Recibo.unidad_id == unidad_id))
     recibos = list(res_recibos.scalars().all())
-    deuda_total = calcular_deuda_total([(r.monto_usd, r.monto_pagado_usd) for r in recibos])
+    deuda_total = calcular_deuda_total([(r.monto_gtq, r.monto_pagado_gtq) for r in recibos])
     if deuda_total > Decimal("0.00"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=(
                 "Reserva bloqueada por morosidad: La unidad solicitante registra deuda pendiente "
-                "y debe estar solvente ($0.00 USD) para reservar áreas sociales."
+                "y debe estar solvente (Q0.00) para reservar áreas sociales."
             ),
         )
 
@@ -174,8 +174,8 @@ async def crear_area_social(
     area = AreaSocial(
         nombre=nombre_limpio,
         aforo_maximo=datos.aforo_maximo,
-        costo_uso_usd=cuantizar(datos.costo_uso_usd),
-        deposito_garantia_usd=cuantizar(datos.deposito_garantia_usd),
+        costo_uso_gtq=cuantizar(datos.costo_uso_gtq),
+        deposito_garantia_gtq=cuantizar(datos.deposito_garantia_gtq),
         requiere_solvencia_estricta=datos.requiere_solvencia_estricta,
         es_activa=True,
     )
@@ -250,7 +250,7 @@ async def solicitar_reserva_area_social(
     usuario: Usuario = Depends(get_current_user),
     redis_conn: aioredis.Redis = Depends(get_redis_client),
 ) -> ReservaAreaResponse:
-    """Solicita la reserva exclusiva de un área social verificando solvencia ($0.00 USD) y agenda tarea de conserje."""
+    """Solicita la reserva exclusiva de un área social verificando solvencia (Q0.00) y agenda tarea de conserje."""
     verificar_usuario_activo(usuario)
     es_unica = await check_and_set_idempotency_key(redis_conn, idempotency_key, scope=f"reservar:{datos.unidad_id}")
     if not es_unica:
@@ -329,7 +329,7 @@ async def _registrar_cargo_danos_reserva(
     usuario_id: int,
 ) -> None:
     """Registra el cargo contable (Recibo, ReciboItem y AuditoriaRecibo) por retención de depósito."""
-    monto_danos = cuantizar(area.deposito_garantia_usd)
+    monto_danos = cuantizar(area.deposito_garantia_gtq)
     if monto_danos <= Decimal("0.00"):
         return
 
@@ -350,16 +350,16 @@ async def _registrar_cargo_danos_reserva(
 
     if recibo is not None and not recibo.bloqueado:
         estado_viejo = recibo.estado
-        recibo.monto_usd = cuantizar(recibo.monto_usd + monto_danos)
-        pagado = recibo.monto_pagado_usd or Decimal("0.00")
+        recibo.monto_gtq = cuantizar(recibo.monto_gtq + monto_danos)
+        pagado = recibo.monto_pagado_gtq or Decimal("0.00")
         recibo.estado = "PAGADO_PARCIAL" if pagado > Decimal("0.00") else "PENDIENTE"
     else:
         estado_viejo = "INEXISTENTE"
         recibo = Recibo(
             unidad_id=reserva.unidad_id,
             periodo=periodo_cargo,
-            monto_usd=monto_danos,
-            monto_pagado_usd=Decimal("0.00"),
+            monto_gtq=monto_danos,
+            monto_pagado_gtq=Decimal("0.00"),
             estado="PENDIENTE",
             bloqueado=False,
         )
@@ -371,7 +371,7 @@ async def _registrar_cargo_danos_reserva(
             recibo_id=recibo.id,
             tipo_item="DANOS_AREA_SOCIAL",
             descripcion=f"Cargo por daños post-evento en {area.nombre} ({reserva.fecha_evento.isoformat()})",
-            monto_usd=monto_danos,
+            monto_gtq=monto_danos,
         )
     )
     db.add(
