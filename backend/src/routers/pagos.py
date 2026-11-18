@@ -11,12 +11,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from src.database import get_db
-from src.dependencies import get_current_user, verificar_roles, verificar_usuario_activo
+from src.dependencies import get_current_user, roles_efectivos, verificar_roles, verificar_usuario_activo
 from src.finanzas import (
     ErrorFinanciero,
     aplicar_pago,
     calcular_excedente_pago,
-    convertir_a_usd,
+    convertir_a_gtq,
     cuantizar,
     validar_referencia,
 )
@@ -82,7 +82,7 @@ async def _obtener_unidad_bloqueada(db: AsyncSession, unidad_id: int) -> Unidad:
 
 async def _verificar_titularidad_recibo(db: AsyncSession, usuario: Usuario, unidad_id: int) -> None:
     """Impide IDOR verificando contrato activo en la unidad o pertenencia a Tesorería/Presidencia."""
-    if getattr(usuario, "rol", "") in _ROLES_TESORERIA:
+    if getattr(usuario, "rol", "") in roles_efectivos(_ROLES_TESORERIA):
         return
     res = await db.execute(
         select(ContratoOcupacion).where(
@@ -167,14 +167,14 @@ async def reportar_pago(
                 detail="El periodo está cerrado (Candado Contable)",
             )
 
-        monto_usd = convertir_a_usd(pago.monto, pago.moneda, tasa.tasa_usd_ves)
+        monto_gtq = convertir_a_gtq(pago.monto, pago.moneda, tasa.tasa_usd_gtq)
         nuevo_pago = PagoReportado(
             recibo_id=recibo.id,
             usuario_id=usuario.id,
             monto=pago.monto,
             moneda=pago.moneda,
-            monto_usd=monto_usd,
-            tasa_cambio=tasa.tasa_usd_ves,
+            monto_gtq=monto_gtq,
+            tasa_cambio=tasa.tasa_usd_gtq,
             metodo_pago=metodo_norm,
             numero_referencia=ref_limpia,
             url_comprobante=pago.url_comprobante,
@@ -256,16 +256,16 @@ async def aprobar_pago(
         )
 
     unidad = await _obtener_unidad_bloqueada(db, recibo.unidad_id)
-    excedente = calcular_excedente_pago(recibo.monto_usd, recibo.monto_pagado_usd, pago.monto_usd)
-    nuevo_pagado, nuevo_estado = aplicar_pago(recibo.monto_usd, recibo.monto_pagado_usd, pago.monto_usd)
-    recibo.monto_pagado_usd = recibo.monto_usd if excedente > Decimal("0.00") else nuevo_pagado
+    excedente = calcular_excedente_pago(recibo.monto_gtq, recibo.monto_pagado_gtq, pago.monto_gtq)
+    nuevo_pagado, nuevo_estado = aplicar_pago(recibo.monto_gtq, recibo.monto_pagado_gtq, pago.monto_gtq)
+    recibo.monto_pagado_gtq = recibo.monto_gtq if excedente > Decimal("0.00") else nuevo_pagado
     recibo.estado = nuevo_estado
     pago.estado = "APROBADO"
     motivo_auditoria: str | None = None
     if excedente > Decimal("0.00"):
-        credito_previo = getattr(unidad, "credito_disponible_usd", None) or Decimal("0.00")
-        unidad.credito_disponible_usd = cuantizar(credito_previo + excedente)
-        motivo_auditoria = f"Sobrepago acreditado a saldo a favor: +{excedente} USD"
+        credito_previo = getattr(unidad, "credito_disponible_gtq", None) or Decimal("0.00")
+        unidad.credito_disponible_gtq = cuantizar(credito_previo + excedente)
+        motivo_auditoria = f"Sobrepago acreditado a saldo a favor: +{excedente} GTQ"
 
     db.add(
         AuditoriaRecibo(

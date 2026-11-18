@@ -91,8 +91,8 @@ async def generar_estructura(
                 identificador=ident,
                 estructura_id=estructura.id or 1,
                 alicuota=Decimal("0.0000"),
-                cuota_fija_usd=None,
-                credito_disponible_usd=Decimal("0.00"),
+                cuota_fija_gtq=None,
+                credito_disponible_gtq=Decimal("0.00"),
             )
             db.add(unidad)
             unidades_creadas.append(unidad)
@@ -331,7 +331,7 @@ async def actualizar_alicuota_unidad(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Unidad no encontrada.")
 
     unidad.alicuota = datos.alicuota.quantize(Decimal("0.0001"))
-    unidad.cuota_fija_usd = datos.cuota_fija_usd.quantize(Decimal("0.01")) if datos.cuota_fija_usd is not None else None
+    unidad.cuota_fija_gtq = datos.cuota_fija_gtq.quantize(Decimal("0.01")) if datos.cuota_fija_gtq is not None else None
     await db.commit()
     await db.refresh(unidad)
     return UnidadResponse.model_validate(unidad)

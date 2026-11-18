@@ -53,9 +53,9 @@ def _cargos_cuota_fija(
     items_por_unidad: dict[int, list[tuple[str, str, Decimal]]] = {}
     total_fijo = CERO
     for u in unidades:
-        tarifa = getattr(u, "cuota_fija_usd", None) or datos.monto_cuota_fija_usd
+        tarifa = getattr(u, "cuota_fija_gtq", None) or datos.monto_cuota_fija_gtq
         if tarifa is None or tarifa <= CERO:
-            raise ErrorFinanciero("En modalidad CUOTA_FIJA debe definir monto_cuota_fija_usd mayor que cero")
+            raise ErrorFinanciero("En modalidad CUOTA_FIJA debe definir monto_cuota_fija_gtq mayor que cero")
         cuota_u = cuantizar(tarifa)
         total_fijo += cuota_u
         items_por_unidad[u.id] = [("CUOTA_FIJA", f"Cuota fija mensual ({datos.periodo})", cuota_u)]
@@ -95,15 +95,15 @@ def _anexar_cuota_extraordinaria(
     unidades: list[Unidad],
     items_por_unidad: dict[int, list[tuple[str, str, Decimal]]],
 ) -> None:
-    if datos.cuota_extraordinaria_total_usd <= CERO:
+    if datos.cuota_extraordinaria_total_gtq <= CERO:
         return
     if datos.modalidad == "ALICUOTA":
         pesos_alicuota = [(u.id, getattr(u, "alicuota", None) or Decimal("0.0000")) for u in unidades]
         if not validar_suma_alicuotas([peso for _, peso in pesos_alicuota]):
             raise ErrorFinanciero("La suma de alícuotas de las unidades debe equivaler a 100.0000% antes de facturar")
-        mapa_extra = prorratear_por_alicuotas(datos.cuota_extraordinaria_total_usd, pesos_alicuota)
+        mapa_extra = prorratear_por_alicuotas(datos.cuota_extraordinaria_total_gtq, pesos_alicuota)
     else:
-        mapa_extra = prorratear_partes_iguales(datos.cuota_extraordinaria_total_usd, [u.id for u in unidades])
+        mapa_extra = prorratear_partes_iguales(datos.cuota_extraordinaria_total_gtq, [u.id for u in unidades])
     desc_extra = datos.descripcion_cuota_extraordinaria or "Cuota extraordinaria aprobada"
     for uid, monto_extra in mapa_extra.items():
         items_por_unidad[uid].append(("CUOTA_EXTRAORDINARIA", desc_extra, monto_extra))
@@ -132,9 +132,9 @@ def _crear_recibo_e_items_unidad(
     lineas_cargo: list[tuple[str, str, Decimal]],
 ) -> tuple[Recibo, list[ReciboItem], Decimal, Decimal]:
     cargo_bruto = cuantizar(sum((m for _, _, m in lineas_cargo), CERO))
-    credito_actual = getattr(unidad, "credito_disponible_usd", None) or CERO
+    credito_actual = getattr(unidad, "credito_disponible_gtq", None) or CERO
     monto_neto, credito_usado, credito_restante = aplicar_credito_disponible(cargo_bruto, credito_actual)
-    unidad.credito_disponible_usd = credito_restante
+    unidad.credito_disponible_gtq = credito_restante
 
     cubierto_por_credito = cargo_bruto > CERO and monto_neto == CERO
     monto_recibo = cargo_bruto if cubierto_por_credito else monto_neto
@@ -144,19 +144,19 @@ def _crear_recibo_e_items_unidad(
     recibo = Recibo(
         unidad_id=unidad.id,
         periodo=periodo,
-        monto_usd=monto_recibo,
-        monto_pagado_usd=pagado_inicial,
+        monto_gtq=monto_recibo,
+        monto_pagado_gtq=pagado_inicial,
         estado=estado_inicial,
         bloqueado=False,
     )
-    items_orm = [ReciboItem(recibo_id=0, tipo_item=t, descripcion=d, monto_usd=m) for t, d, m in lineas_cargo]
+    items_orm = [ReciboItem(recibo_id=0, tipo_item=t, descripcion=d, monto_gtq=m) for t, d, m in lineas_cargo]
     if credito_usado > CERO:
         items_orm.append(
             ReciboItem(
                 recibo_id=0,
                 tipo_item="ABONO_CREDITO_PREVIO",
                 descripcion="Abono automático de saldo a favor disponible",
-                monto_usd=-credito_usado,
+                monto_gtq=-credito_usado,
             )
         )
     return recibo, items_orm, cargo_bruto, credito_usado
@@ -177,7 +177,7 @@ async def cargar_contexto_facturacion(
 
     egr_res = await db.execute(select(Egreso).where(Egreso.periodo == datos.periodo, Egreso.es_gasto_comun.is_(True)))
     egresos_comunes = list(egr_res.scalars().all())
-    total_egresos = cuantizar(sum((e.monto_usd for e in egresos_comunes), CERO))
+    total_egresos = cuantizar(sum((e.monto_gtq for e in egresos_comunes), CERO))
 
     fondo_res = await db.execute(
         select(FondoCondominio).where(
@@ -218,7 +218,7 @@ async def persistir_lote_facturacion(
 
     if fondo_reserva is not None:
         incremento_fondo = superavit_fondo if modalidad == "CUOTA_FIJA" else recargo_reserva
-        fondo_reserva.saldo_actual_usd = cuantizar((fondo_reserva.saldo_actual_usd or CERO) + incremento_fondo)
+        fondo_reserva.saldo_actual_gtq = cuantizar((fondo_reserva.saldo_actual_gtq or CERO) + incremento_fondo)
 
     await db.flush()
     for idx, (recibo, items_orm) in enumerate(pares_recibo_items, start=1):

@@ -342,7 +342,7 @@ describe('operationsStore — Patrón No Destructivo, Incidencias, Conserjería,
         identificador: 'Apto 1-A',
         estructura_id: 1,
         alicuota: '25.0000',
-        cuota_fija_usd: '30.00',
+        cuota_fija_gtq: '30.00',
       })
       .mockRejectedValueOnce(new ApiError(404, 'Unidad no existe'))
       .mockRejectedValueOnce(new Error('Red alícuota'));
@@ -350,7 +350,7 @@ describe('operationsStore — Patrón No Destructivo, Incidencias, Conserjería,
     store.data.unidades = [{ id: 1, identificador: 'Apto 1-A', estructura_id: 1 }];
     const uUpd = await store.actualizarAlicuotaUnidad(
       1,
-      { alicuota: '25.0000', cuota_fija_usd: '30.00' },
+      { alicuota: '25.0000', cuota_fija_gtq: '30.00' },
       'idemp-ali-1',
     );
     expect(uUpd.alicuota).toBe('25.0000');

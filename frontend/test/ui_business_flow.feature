@@ -103,7 +103,7 @@ Feature: Cobertura Funcional y Flujos BDD de Identidad, Finanzas, Operaciones, A
     And waitFor('#reg-unidad')
     * def bodyText = text('body')
     * assert !bodyText.contains('alicuota')
-    * assert !bodyText.contains('credito_disponible_usd')
+    * assert !bodyText.contains('credito_disponible_gtq')
 
   Scenario: 11. Conmutación de tema claro/oscuro OKLCH mediante #btn-theme-toggle y actualización de meta color-scheme (Hito 15)
     Given driver baseUrl + '/login'

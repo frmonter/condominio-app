@@ -59,4 +59,19 @@ describe('SidebarNav.vue', () => {
     expect(fallbackWrapper.find('#side-junta').exists()).toBe(true);
     expect(fallbackWrapper.find('#side-garita-qr').exists()).toBe(true);
   });
+
+  it('el ADMINISTRADOR ve las secciones de Presidencia y Tesorería', () => {
+    const wrapper = mount(SidebarNav, {
+      props: { userName: 'Administradora', role: 'ADMINISTRADOR', currentPath: '/dashboard' },
+    });
+    for (const id of [
+      '#side-revision-pagos',
+      '#side-cierre-mensual',
+      '#side-facturacion',
+      '#side-estructura',
+      '#side-junta',
+    ]) {
+      expect(wrapper.find(id).exists()).toBe(true);
+    }
+  });
 });

@@ -184,7 +184,7 @@ Feature: Validación BDD de Caja Negra y Seguridad Nivel 11X de la API Condomini
 
     Given path '/api/estructura/unidades/1/alicuota'
     And header Idempotency-Key = java.util.UUID.randomUUID() + ''
-    And request { alicuota: "25.0000", cuota_fija_usd: "30.00" }
+    And request { alicuota: "25.0000", cuota_fija_gtq: "30.00" }
     When method put
     Then status 403
 
@@ -196,7 +196,7 @@ Feature: Validación BDD de Caja Negra y Seguridad Nivel 11X de la API Condomini
 
     Given path '/api/finanzas/facturar-periodo'
     And header Idempotency-Key = java.util.UUID.randomUUID() + ''
-    And request { periodo: "2026-10", modalidad: "CUOTA_FIJA", monto_cuota_fija_usd: "25.00" }
+    And request { periodo: "2026-10", modalidad: "CUOTA_FIJA", monto_cuota_fija_gtq: "25.00" }
     When method post
     Then status 403
 
@@ -387,7 +387,7 @@ Feature: Validación BDD de Caja Negra y Seguridad Nivel 11X de la API Condomini
 
     Given path '/api/reservas/areas'
     And header Idempotency-Key = java.util.UUID.randomUUID() + ''
-    And request { nombre: "Salón BDD", aforo_maximo: 60, costo_uso_usd: "25.00", deposito_garantia_usd: "80.00", requiere_solvencia_estricta: true }
+    And request { nombre: "Salón BDD", aforo_maximo: 60, costo_uso_gtq: "25.00", deposito_garantia_gtq: "80.00", requiere_solvencia_estricta: true }
     When method post
     Then status 403
 
@@ -548,7 +548,7 @@ Feature: Validación BDD de Caja Negra y Seguridad Nivel 11X de la API Condomini
 
     Given path '/api/finanzas/egresos'
     And header X-CSRF-Token = csrfTok
-    And request { periodo: "2026-10", categoria: "MANTENIMIENTO", descripcion: "Prueba BDD 17.3", monto: "25.00", moneda: "USD" }
+    And request { periodo: "2026-10", categoria: "MANTENIMIENTO", descripcion: "Prueba BDD 17.3", monto: "25.00", moneda: "GTQ" }
     When method post
     Then status 422
     And match response.detail[0].loc contains 'Idempotency-Key'
@@ -563,14 +563,14 @@ Feature: Validación BDD de Caja Negra y Seguridad Nivel 11X de la API Condomini
     Given path '/api/finanzas/egresos'
     And header X-CSRF-Token = csrfTok
     And header Idempotency-Key = java.util.UUID.randomUUID() + ''
-    And request { periodo: "2026-10", categoria: "MANTENIMIENTO", descripcion: "Prueba BDD 17.3", monto: "25.00", moneda: "USD" }
+    And request { periodo: "2026-10", categoria: "MANTENIMIENTO", descripcion: "Prueba BDD 17.3", monto: "25.00", moneda: "GTQ" }
     When method post
     Then status 403
 
     Given path '/api/pagos/reportar'
     And header X-CSRF-Token = csrfTok
     And header Idempotency-Key = java.util.UUID.randomUUID() + ''
-    And request { recibo_id: 1, monto: "25.00", moneda: "USD", metodo_pago: "EFECTIVO" }
+    And request { recibo_id: 1, monto: "25.00", moneda: "GTQ", metodo_pago: "EFECTIVO" }
     When method post
     Then status 403
 

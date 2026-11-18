@@ -35,8 +35,8 @@ describe('ConsultationDetailView.vue', () => {
         identificador: 'A-07',
         estructura_id: 1,
         alicuota: '35.0000',
-        cuota_fija_usd: null,
-        credito_disponible_usd: '0.00',
+        cuota_fija_gtq: null,
+        credito_disponible_gtq: '0.00',
       },
     ];
 

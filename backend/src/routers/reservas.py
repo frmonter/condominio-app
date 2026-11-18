@@ -11,7 +11,13 @@ from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
-from src.dependencies import get_current_user, verificar_roles, verificar_usuario_activo
+from src.dependencies import (
+    es_presidencia,
+    get_current_user,
+    roles_efectivos,
+    verificar_roles,
+    verificar_usuario_activo,
+)
 from src.finanzas import calcular_deuda_total, cuantizar
 from src.models import (
     AreaSocial,
@@ -62,7 +68,7 @@ async def _obtener_unidad_autorizada(db: AsyncSession, usuario: Usuario, unidad_
     unidad = res.scalars().first()
     if not unidad:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Unidad inmobiliaria no encontrada.")
-    if usuario.rol == "PRESIDENTE":
+    if es_presidencia(usuario):
         return unidad
     unidades_propias = await _unidades_activas_usuario(db, usuario.id)
     if unidad_id not in unidades_propias:
@@ -86,13 +92,13 @@ async def _verificar_candado_solvencia_estricta(db: AsyncSession, unidad_id: int
         return
     res_recibos = await db.execute(select(Recibo).where(Recibo.unidad_id == unidad_id))
     recibos = list(res_recibos.scalars().all())
-    deuda_total = calcular_deuda_total([(r.monto_usd, r.monto_pagado_usd) for r in recibos])
+    deuda_total = calcular_deuda_total([(r.monto_gtq, r.monto_pagado_gtq) for r in recibos])
     if deuda_total > Decimal("0.00"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=(
                 "Reserva bloqueada por morosidad: La unidad solicitante registra deuda pendiente "
-                "y debe estar solvente ($0.00 USD) para reservar áreas sociales."
+                "y debe estar solvente (Q0.00) para reservar áreas sociales."
             ),
         )
 
@@ -174,8 +180,8 @@ async def crear_area_social(
     area = AreaSocial(
         nombre=nombre_limpio,
         aforo_maximo=datos.aforo_maximo,
-        costo_uso_usd=cuantizar(datos.costo_uso_usd),
-        deposito_garantia_usd=cuantizar(datos.deposito_garantia_usd),
+        costo_uso_gtq=cuantizar(datos.costo_uso_gtq),
+        deposito_garantia_gtq=cuantizar(datos.deposito_garantia_gtq),
         requiere_solvencia_estricta=datos.requiere_solvencia_estricta,
         es_activa=True,
     )
@@ -216,7 +222,7 @@ async def listar_reservas_areas(
         .join(AreaSocial, AreaSocial.id == ReservaAreaSocial.area_id)
         .join(Unidad, Unidad.id == ReservaAreaSocial.unidad_id)
     )
-    if usuario.rol not in _ROLES_JUNTA_Y_GARITA:
+    if usuario.rol not in roles_efectivos(_ROLES_JUNTA_Y_GARITA):
         unidades_propias = await _unidades_activas_usuario(db, usuario.id)
         if unidades_propias:
             stmt = stmt.where(
@@ -250,7 +256,7 @@ async def solicitar_reserva_area_social(
     usuario: Usuario = Depends(get_current_user),
     redis_conn: aioredis.Redis = Depends(get_redis_client),
 ) -> ReservaAreaResponse:
-    """Solicita la reserva exclusiva de un área social verificando solvencia ($0.00 USD) y agenda tarea de conserje."""
+    """Solicita la reserva exclusiva de un área social verificando solvencia (Q0.00) y agenda tarea de conserje."""
     verificar_usuario_activo(usuario)
     es_unica = await check_and_set_idempotency_key(redis_conn, idempotency_key, scope=f"reservar:{datos.unidad_id}")
     if not es_unica:
@@ -303,7 +309,7 @@ async def _completar_tarea_inspeccion(db: AsyncSession, tarea_inspeccion_id: int
 
 
 async def _verificar_permiso_cancelacion(db: AsyncSession, usuario: Usuario, reserva: ReservaAreaSocial) -> None:
-    if usuario.rol in _ROLES_CANCELACION_JUNTA or reserva.solicitante_id == usuario.id:
+    if usuario.rol in roles_efectivos(_ROLES_CANCELACION_JUNTA) or reserva.solicitante_id == usuario.id:
         return
     unidades_propias = await _unidades_activas_usuario(db, usuario.id)
     if reserva.unidad_id not in unidades_propias:
@@ -329,7 +335,7 @@ async def _registrar_cargo_danos_reserva(
     usuario_id: int,
 ) -> None:
     """Registra el cargo contable (Recibo, ReciboItem y AuditoriaRecibo) por retención de depósito."""
-    monto_danos = cuantizar(area.deposito_garantia_usd)
+    monto_danos = cuantizar(area.deposito_garantia_gtq)
     if monto_danos <= Decimal("0.00"):
         return
 
@@ -350,16 +356,16 @@ async def _registrar_cargo_danos_reserva(
 
     if recibo is not None and not recibo.bloqueado:
         estado_viejo = recibo.estado
-        recibo.monto_usd = cuantizar(recibo.monto_usd + monto_danos)
-        pagado = recibo.monto_pagado_usd or Decimal("0.00")
+        recibo.monto_gtq = cuantizar(recibo.monto_gtq + monto_danos)
+        pagado = recibo.monto_pagado_gtq or Decimal("0.00")
         recibo.estado = "PAGADO_PARCIAL" if pagado > Decimal("0.00") else "PENDIENTE"
     else:
         estado_viejo = "INEXISTENTE"
         recibo = Recibo(
             unidad_id=reserva.unidad_id,
             periodo=periodo_cargo,
-            monto_usd=monto_danos,
-            monto_pagado_usd=Decimal("0.00"),
+            monto_gtq=monto_danos,
+            monto_pagado_gtq=Decimal("0.00"),
             estado="PENDIENTE",
             bloqueado=False,
         )
@@ -371,7 +377,7 @@ async def _registrar_cargo_danos_reserva(
             recibo_id=recibo.id,
             tipo_item="DANOS_AREA_SOCIAL",
             descripcion=f"Cargo por daños post-evento en {area.nombre} ({reserva.fecha_evento.isoformat()})",
-            monto_usd=monto_danos,
+            monto_gtq=monto_danos,
         )
     )
     db.add(

@@ -34,7 +34,7 @@ describe('SolvencyCertificateView.vue', () => {
           emitido_por_id: 1,
           fecha_emision: '2026-10-30T10:00:00Z',
           fecha_vencimiento: '2026-10-31',
-          deuda_verificada_usd: '0.00',
+          deuda_verificada_gtq: '0.00',
           firma_hmac: '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
           qr_token: 'U09MVnx2MQ.1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
         };
@@ -51,7 +51,7 @@ describe('SolvencyCertificateView.vue', () => {
           identificador_unidad: 'Apto 1-A',
           fecha_vencimiento: '2026-10-31',
           vigente: true,
-          deuda_verificada_usd: '0.00',
+          deuda_verificada_gtq: '0.00',
           firma_hmac: '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
         };
         return financeStore.data.verificacionSolvencia;
@@ -98,7 +98,7 @@ describe('SolvencyCertificateView.vue', () => {
       identificador_unidad: 'Apto 1-A',
       fecha_vencimiento: '2026-10-31',
       vigente: false,
-      deuda_verificada_usd: '0.00',
+      deuda_verificada_gtq: '0.00',
       firma_hmac: '0000',
     };
     emitirSpy.mockRejectedValueOnce(new Error('Insolvente'));

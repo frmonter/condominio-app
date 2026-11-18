@@ -30,9 +30,9 @@ describe('RegisterView.vue', () => {
     const regSpy = vi.spyOn(store, 'register').mockResolvedValueOnce({
       id: 10,
       nombre: 'Laura Díaz',
-      cedula: 'V-20304050',
+      cedula: '2456789010101',
       correo: 'laura@test.com',
-      telefono: '+584140001122',
+      telefono: '+50255551122',
       es_activo: false,
       rol: 'FANTASMA',
     });
@@ -48,9 +48,9 @@ describe('RegisterView.vue', () => {
     // Completar formulario y enviar
     await wrapper.find('#reg-nombre').setValue('Laura Díaz');
     await wrapper.find('#reg-nombre').trigger('change');
-    await wrapper.find('#reg-cedula').setValue('V-20304050');
+    await wrapper.find('#reg-cedula').setValue('2456 78901 0101');
     await wrapper.find('#reg-correo').setValue('laura@test.com');
-    await wrapper.find('#reg-telefono').setValue('+584140001122');
+    await wrapper.find('#reg-telefono').setValue('5555 1122');
     await wrapper.find('#reg-password').setValue('Password123!');
     await wrapper.find('#reg-tipo-ocupante').setValue('INQUILINO');
 
@@ -59,6 +59,29 @@ describe('RegisterView.vue', () => {
 
     expect(regSpy).toHaveBeenCalledOnce();
     expect(pushMock).toHaveBeenCalledWith('/espera-aprobacion');
+  });
+
+  it('valida DPI y teléfono de Guatemala antes de enviar el registro', async () => {
+    vi.spyOn(apiClient, 'apiRequest').mockResolvedValueOnce([]);
+    const store = useAuthStore();
+    const regSpy = vi.spyOn(store, 'register');
+
+    const wrapper = mount(RegisterView);
+    await flushPromises();
+
+    await wrapper.find('#reg-nombre').setValue('Carlos');
+    await wrapper.find('#reg-cedula').setValue('V-12');
+    await wrapper.find('#reg-correo').setValue('carlos@test.com');
+    await wrapper.find('#reg-telefono').setValue('55551234');
+    await wrapper.find('#reg-password').setValue('Password123!');
+    await wrapper.find('#register-form').trigger('submit.prevent');
+    expect(wrapper.find('.banner--error').text()).toContain('DPI válido');
+
+    await wrapper.find('#reg-cedula').setValue('2456 78901 0101');
+    await wrapper.find('#reg-telefono').setValue('0414');
+    await wrapper.find('#register-form').trigger('submit.prevent');
+    expect(wrapper.find('.banner--error').text()).toContain('teléfono válido');
+    expect(regSpy).not.toHaveBeenCalled();
   });
 
   it('muestra banner de error cuando falla el registro en el backend', async () => {
@@ -71,9 +94,9 @@ describe('RegisterView.vue', () => {
     await flushPromises();
 
     await wrapper.find('#reg-nombre').setValue('Pedro');
-    await wrapper.find('#reg-cedula').setValue('V-1');
+    await wrapper.find('#reg-cedula').setValue('1111111110101');
     await wrapper.find('#reg-correo').setValue('pedro@test.com');
-    await wrapper.find('#reg-telefono').setValue('0414');
+    await wrapper.find('#reg-telefono').setValue('55550414');
     await wrapper.find('#reg-password').setValue('Password123!');
     await wrapper.find('#register-form').trigger('submit.prevent');
     await flushPromises();

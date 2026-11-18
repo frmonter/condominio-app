@@ -12,7 +12,7 @@ import ExpensesDonutChart from '../../components/finance/ExpensesDonutChart.vue'
 import AppShellLayout from '../../components/layout/AppShellLayout.vue';
 import { runWithViewTransition } from '../../composables/useViewTransition';
 import { useAuthStore } from '../../stores/authStore';
-import { convertUsdToVes, useFinanceStore } from '../../stores/financeStore';
+import { convertGtqToUsd, useFinanceStore } from '../../stores/financeStore';
 
 const authStore = useAuthStore();
 const financeStore = useFinanceStore();
@@ -20,10 +20,10 @@ const router = useRouter();
 
 const activeTab = ref<'cobranza' | 'gastos'>('cobranza');
 
-const deudaTotalUsd = computed(() => financeStore.data.resumen?.deuda_total_usd ?? '0.00');
-const isSolvent = computed(() => Number.parseFloat(deudaTotalUsd.value) <= 0);
-const deudaTotalVes = computed(() =>
-  convertUsdToVes(deudaTotalUsd.value, financeStore.activeRateValue),
+const deudaTotalGtq = computed(() => financeStore.data.resumen?.deuda_total_gtq ?? '0.00');
+const isSolvent = computed(() => Number.parseFloat(deudaTotalGtq.value) <= 0);
+const deudaTotalUsd = computed(() =>
+  convertGtqToUsd(deudaTotalGtq.value, financeStore.activeRateValue),
 );
 const activePeriod = computed(
   () =>
@@ -61,7 +61,7 @@ async function switchTab(tab: 'cobranza' | 'gastos'): Promise<void> {
         </p>
       </div>
       <div id="daily-rate-badge" class="rate-badge tabular-nums">
-        Tasa BCV: {{ financeStore.activeRateValue }} VES/USD
+        Tipo de cambio: Q{{ financeStore.activeRateValue }} por US$1
       </div>
     </header>
 
@@ -125,9 +125,9 @@ async function switchTab(tab: 'cobranza' | 'gastos'): Promise<void> {
         </div>
 
         <p class="summary-card__value tabular-nums">
-          {{ isSolvent ? 'Solvente / Al día' : `${deudaTotalUsd} USD` }}
+          {{ isSolvent ? 'Solvente / Al día' : `${deudaTotalGtq} GTQ` }}
         </p>
-        <p class="summary-card__sub tabular-nums">Equivalente BCV: {{ deudaTotalVes }} VES</p>
+        <p class="summary-card__sub tabular-nums">Equivalente en dólares: US${{ deudaTotalUsd }}</p>
       </article>
     </section>
 
@@ -201,13 +201,13 @@ async function switchTab(tab: 'cobranza' | 'gastos'): Promise<void> {
     <CollectionTrafficLight
       v-if="activeTab === 'cobranza'"
       :items="financeStore.data.resumen?.estado_cobranza ?? []"
-      :rate-usd-ves="financeStore.activeRateValue"
+      :rate-usd-gtq="financeStore.activeRateValue"
       :own-unit-id="ownUnitId"
     />
     <ExpensesDonutChart
       v-else
       :expenses-by-category="financeStore.data.resumen?.gastos_por_categoria ?? {}"
-      :total-expenses-usd="financeStore.data.resumen?.total_egresos_usd ?? '0.00'"
+      :total-expenses-gtq="financeStore.data.resumen?.total_egresos_gtq ?? '0.00'"
     />
 
     <button

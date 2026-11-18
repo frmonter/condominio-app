@@ -22,20 +22,20 @@ describe('BillingGeneratorView.vue', () => {
       periodo: '2026-10',
       modalidad: 'CUOTA_FIJA',
       recibos_emitidos: 4,
-      total_egresos_comunes_usd: '60.00',
-      recargo_fondo_reserva_usd: '0.00',
-      cuota_extraordinaria_total_usd: '0.00',
-      total_facturado_bruto_usd: '100.00',
-      total_credito_descontado_usd: '0.00',
-      total_facturado_neto_usd: '100.00',
-      superavit_conciliado_fondo_usd: '40.00',
+      total_egresos_comunes_gtq: '60.00',
+      recargo_fondo_reserva_gtq: '0.00',
+      cuota_extraordinaria_total_gtq: '0.00',
+      total_facturado_bruto_gtq: '100.00',
+      total_credito_descontado_gtq: '0.00',
+      total_facturado_neto_gtq: '100.00',
+      superavit_conciliado_fondo_gtq: '40.00',
     });
     const crearFondoSpy = vi.spyOn(store, 'crearFondo').mockResolvedValue({
       id: 1,
       nombre: 'Fondo de Reserva Legal',
       tipo: 'RESERVA_LEGAL',
       porcentaje_recargo: '10.00',
-      saldo_actual_usd: '0.00',
+      saldo_actual_gtq: '0.00',
       es_activo: true,
     });
     const desgloseSpy = vi.spyOn(store, 'fetchReciboDesglose').mockImplementation(async () => {
@@ -45,10 +45,10 @@ describe('BillingGeneratorView.vue', () => {
         identificador_unidad: 'Apto 1-A',
         alicuota_aplicada: '25.0000',
         periodo: '2026-10',
-        monto_usd: '25.00',
-        monto_pagado_usd: '0.00',
-        saldo_pendiente_usd: '25.00',
-        credito_descontado_usd: '0.00',
+        monto_gtq: '25.00',
+        monto_pagado_gtq: '0.00',
+        saldo_pendiente_gtq: '25.00',
+        credito_descontado_gtq: '0.00',
         estado: 'PENDIENTE',
         bloqueado: false,
         items: [],
@@ -57,8 +57,8 @@ describe('BillingGeneratorView.vue', () => {
     });
 
     store.data.resumen = {
-      deuda_total_usd: '25.00',
-      total_egresos_usd: '60.00',
+      deuda_total_gtq: '25.00',
+      total_egresos_gtq: '60.00',
       gastos_por_categoria: {},
       estado_cobranza: [
         {
@@ -66,7 +66,7 @@ describe('BillingGeneratorView.vue', () => {
           unidad_id: 1,
           periodo: '2026-10',
           estado: 'PENDIENTE',
-          saldo_usd: '25.00',
+          saldo_gtq: '25.00',
         },
       ],
     };

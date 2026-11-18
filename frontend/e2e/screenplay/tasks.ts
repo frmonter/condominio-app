@@ -59,9 +59,9 @@ export class RegisterNewResident implements Task {
     const page = actor.page();
     await page.goto('/register', { waitUntil: 'domcontentloaded' });
     await page.locator('#reg-nombre').fill('Valeria Nuevo Residente');
-    await page.locator('#reg-cedula').fill('V-24555666');
+    await page.locator('#reg-cedula').fill('2455 56660 0101');
     await page.locator('#reg-correo').fill(this.correo);
-    await page.locator('#reg-telefono').fill('0414-5559988');
+    await page.locator('#reg-telefono').fill('5555-9988');
     await page.locator('#reg-password').fill('ClaveSegura2026!');
     await page.locator('#btn-register-submit').click();
     await page.waitForURL('**/espera-aprobacion');
@@ -124,7 +124,7 @@ export class ReportPayment implements Task {
     await page.goto('/finanzas/reportar-pago', { waitUntil: 'domcontentloaded' });
     await page.locator('#step-1-monto').fill(this.monto);
     await page.locator('#btn-step-1-next').click();
-    await page.locator('#step-2-metodo').selectOption('PAGO_MOVIL');
+    await page.locator('#step-2-metodo').selectOption('DEPOSITO');
     await page.locator('#input-referencia').fill(this.referencia);
     await page.locator('#btn-step-2-next').click();
     await page.locator('#btn-submit-pago').click();

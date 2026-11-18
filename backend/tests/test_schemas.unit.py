@@ -68,8 +68,8 @@ def test_usuario_response_from_attributes() -> None:
 
 
 def test_pago_reportar_schema_valido() -> None:
-    pago = PagoReportar(recibo_id=1, monto=Decimal("100.00"), moneda="USD", metodo_pago="EFECTIVO")
-    assert pago.moneda == "USD"
+    pago = PagoReportar(recibo_id=1, monto=Decimal("100.00"), moneda="GTQ", metodo_pago="EFECTIVO")
+    assert pago.moneda == "GTQ"
     assert pago.numero_referencia is None
     assert pago.url_comprobante is None
 
@@ -81,7 +81,7 @@ def test_pago_reportar_moneda_invalida() -> None:
 
 def test_pago_reportar_monto_no_positivo() -> None:
     with pytest.raises(ValidationError):
-        PagoReportar(recibo_id=1, monto=Decimal(0), moneda="USD", metodo_pago="EFECTIVO")
+        PagoReportar(recibo_id=1, monto=Decimal(0), moneda="GTQ", metodo_pago="EFECTIVO")
 
 
 def test_pago_rechazo_motivo_vacio_invalido() -> None:
@@ -95,21 +95,21 @@ def test_pago_rechazo_motivo_valido() -> None:
 
 def test_tasa_cambio_schema_tasa_no_positiva() -> None:
     with pytest.raises(ValidationError):
-        TasaCambioCreate(tasa_usd_ves=Decimal(0))
+        TasaCambioCreate(tasa_usd_gtq=Decimal(0))
 
 
 def test_tasa_cambio_schema_fecha_opcional() -> None:
-    tasa = TasaCambioCreate(tasa_usd_ves=Decimal("36.5000"))
+    tasa = TasaCambioCreate(tasa_usd_gtq=Decimal("7.3000"))
     assert tasa.fecha is None
 
 
 def test_recibo_schema_periodo_invalido() -> None:
     with pytest.raises(ValidationError):
-        ReciboCreate(unidad_id=1, periodo="2026/10", monto_usd=Decimal("100.00"))
+        ReciboCreate(unidad_id=1, periodo="2026/10", monto_gtq=Decimal("100.00"))
 
 
 def test_recibo_schema_valido() -> None:
-    recibo = ReciboCreate(unidad_id=1, periodo="2026-10", monto_usd=Decimal("100.00"))
+    recibo = ReciboCreate(unidad_id=1, periodo="2026-10", monto_gtq=Decimal("100.00"))
     assert recibo.periodo == "2026-10"
 
 
@@ -119,7 +119,7 @@ def test_egreso_create_schema_valido() -> None:
         categoria="LIMPIEZA",
         descripcion="Insumos",
         monto=Decimal("50.00"),
-        moneda="VES",
+        moneda="USD",
     )
     assert egreso.categoria == "LIMPIEZA"
 
@@ -146,7 +146,7 @@ def test_url_evidencia_segura_bloquea_esquemas_peligrosos() -> None:
             PagoReportar(
                 recibo_id=1,
                 monto=Decimal("50.00"),
-                moneda="USD",
+                moneda="GTQ",
                 metodo_pago="EFECTIVO",
                 url_comprobante=url_maliciosa,
             )
@@ -154,7 +154,7 @@ def test_url_evidencia_segura_bloquea_esquemas_peligrosos() -> None:
     pago_https = PagoReportar(
         recibo_id=1,
         monto=Decimal("50.00"),
-        moneda="USD",
+        moneda="GTQ",
         metodo_pago="EFECTIVO",
         url_comprobante="https://cdn.condominio.local/recibos/1.avif",
     )
@@ -163,7 +163,7 @@ def test_url_evidencia_segura_bloquea_esquemas_peligrosos() -> None:
     pago_relativo = PagoReportar(
         recibo_id=1,
         monto=Decimal("50.00"),
-        moneda="USD",
+        moneda="GTQ",
         metodo_pago="EFECTIVO",
         url_comprobante="/media/recibos/1.avif",
     )

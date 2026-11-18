@@ -11,7 +11,7 @@ const egresoPeriodo = ref('2026-10');
 const egresoCategoria = ref('Bombas de Agua');
 const egresoDescripcion = ref('');
 const egresoMonto = ref('');
-const egresoMoneda = ref<MonedaPago>('USD');
+const egresoMoneda = ref<MonedaPago>('GTQ');
 
 const cierrePeriodo = ref('2026-10');
 const confirmModalOpen = ref(false);
@@ -22,7 +22,7 @@ async function saveTasa(): Promise<void> {
   statusBanner.value = null;
   try {
     const saved = await financeStore.registrarTasa(String(tasaInput.value));
-    statusBanner.value = `Tasa BCV actualizada a ${saved.tasa_usd_ves} VES/USD.`;
+    statusBanner.value = `Tipo de cambio actualizado a Q${saved.tasa_usd_gtq} por US$1.`;
   } catch {
     // Error gestionado en financeStore.errorMessage
   }
@@ -38,7 +38,7 @@ async function saveEgreso(): Promise<void> {
       monto: String(egresoMonto.value),
       moneda: egresoMoneda.value,
     });
-    statusBanner.value = `Egreso #${created.id} registrado (${created.monto_usd} USD).`;
+    statusBanner.value = `Egreso #${created.id} registrado (${created.monto_gtq} GTQ).`;
     egresoDescripcion.value = '';
     egresoMonto.value = '';
   } catch {
@@ -90,7 +90,7 @@ async function confirmMonthlyClosing(): Promise<void> {
 <template>
   <AppShellLayout>
     <header class="page-header">
-      <h1 class="page-header__title">Tesorería: Tasa BCV, Egresos y Candado Contable</h1>
+      <h1 class="page-header__title">Tesorería: Tipo de Cambio, Egresos y Candado Contable</h1>
       <p class="page-header__subtitle">
         Administra la tasa oficial del día, registra gastos comunes y ejecuta el cierre mensual
         inmutable.
@@ -110,21 +110,25 @@ async function confirmMonthlyClosing(): Promise<void> {
     </div>
 
     <div class="treasury-grid">
-      <!-- 1. Registro de Tasa BCV -->
+      <!-- 1. Registro del tipo de cambio -->
       <section class="panel-card" aria-labelledby="tasa-section-title">
-        <h2 id="tasa-section-title" class="panel-card__title">1. Tasa Oficial BCV del Día</h2>
+        <h2 id="tasa-section-title" class="panel-card__title">
+          1. Tipo de Cambio del Día (Banguat)
+        </h2>
         <form class="panel-form" @submit.prevent="saveTasa">
-          <label for="input-tasa-bcv" class="field-label">Tasa VES / USD</label>
+          <label for="input-tasa-bcv" class="field-label">Quetzales por US$1</label>
           <input
             id="input-tasa-bcv"
             v-model="tasaInput"
             type="number"
-            step="0.01"
+            step="0.0001"
             min="0.01"
             required
             class="field-input"
           />
-          <button id="btn-save-tasa" type="submit" class="btn-primary">Guardar Tasa BCV</button>
+          <button id="btn-save-tasa" type="submit" class="btn-primary">
+            Guardar Tipo de Cambio
+          </button>
         </form>
       </section>
 
@@ -165,7 +169,7 @@ async function confirmMonthlyClosing(): Promise<void> {
                 id="input-egreso-monto"
                 v-model="egresoMonto"
                 type="number"
-                step="0.01"
+                step="0.0001"
                 min="0.01"
                 required
                 class="field-input"
@@ -174,8 +178,8 @@ async function confirmMonthlyClosing(): Promise<void> {
             <div class="inline-col">
               <label for="select-egreso-moneda" class="field-label">Moneda</label>
               <select id="select-egreso-moneda" v-model="egresoMoneda" class="field-input">
+                <option value="GTQ">GTQ</option>
                 <option value="USD">USD</option>
-                <option value="VES">VES</option>
               </select>
             </div>
           </div>

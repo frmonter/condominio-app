@@ -18,8 +18,8 @@ describe('AmenitiesReservationView.vue', () => {
         id: 7,
         nombre: payload.nombre,
         aforo_maximo: payload.aforo_maximo,
-        costo_uso_usd: payload.costo_uso_usd,
-        deposito_garantia_usd: payload.deposito_garantia_usd,
+        costo_uso_gtq: payload.costo_uso_gtq,
+        deposito_garantia_gtq: payload.deposito_garantia_gtq,
         requiere_solvencia_estricta: payload.requiere_solvencia_estricta,
         es_activa: true,
       };
@@ -107,8 +107,8 @@ describe('AmenitiesReservationView.vue', () => {
         id: 2,
         nombre: 'Parrillera',
         aforo_maximo: 20,
-        costo_uso_usd: '15.00',
-        deposito_garantia_usd: '50.00',
+        costo_uso_gtq: '15.00',
+        deposito_garantia_gtq: '50.00',
         requiere_solvencia_estricta: false,
         es_activa: true,
       };

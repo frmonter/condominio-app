@@ -15,9 +15,9 @@ const { currentKey: fundKey, rotateKey: rotateFundKey } = useIdempotency();
 
 const periodo = ref('2026-10');
 const modalidad = ref<ModalidadFacturacion>('ALICUOTA');
-const montoCuotaFijaUsd = ref('25.00');
+const montoCuotaFijaGtq = ref('25.00');
 const incluirFondoReserva = ref(true);
-const cuotaExtraUsd = ref('0.00');
+const cuotaExtraGtq = ref('0.00');
 const descCuotaExtra = ref('');
 
 const nombreFondo = ref('');
@@ -41,7 +41,7 @@ async function handleEmitBilling(): Promise<void> {
     validationError.value = 'El periodo debe tener el formato YYYY-MM (ej. 2026-10).';
     return;
   }
-  if (modalidad.value === 'CUOTA_FIJA' && Number.parseFloat(montoCuotaFijaUsd.value) <= 0) {
+  if (modalidad.value === 'CUOTA_FIJA' && Number.parseFloat(montoCuotaFijaGtq.value) <= 0) {
     validationError.value = 'Debe indicar un monto de cuota fija mensual mayor que cero.';
     return;
   }
@@ -51,15 +51,15 @@ async function handleEmitBilling(): Promise<void> {
       {
         periodo: periodo.value.trim(),
         modalidad: modalidad.value,
-        monto_cuota_fija_usd: modalidad.value === 'CUOTA_FIJA' ? montoCuotaFijaUsd.value : null,
+        monto_cuota_fija_gtq: modalidad.value === 'CUOTA_FIJA' ? montoCuotaFijaGtq.value : null,
         incluir_fondo_reserva: incluirFondoReserva.value,
-        cuota_extraordinaria_total_usd: cuotaExtraUsd.value || '0.00',
+        cuota_extraordinaria_total_gtq: cuotaExtraGtq.value || '0.00',
         descripcion_cuota_extraordinaria: descCuotaExtra.value.trim() || null,
       },
       billingKey.value,
     );
     rotateBillingKey();
-    successBanner.value = `Facturación ${res.periodo} (${res.modalidad}) emitida: ${res.recibos_emitidos} recibos por $${res.total_facturado_neto_usd} USD netos.`;
+    successBanner.value = `Facturación ${res.periodo} (${res.modalidad}) emitida: ${res.recibos_emitidos} recibos por Q${res.total_facturado_neto_gtq} netos.`;
   } catch {
     // Error preservado en financeStore.errorMessage
   }
@@ -177,11 +177,11 @@ async function handleOpenBreakdown(reciboId: number): Promise<void> {
 
           <div v-if="modalidad === 'CUOTA_FIJA'" class="billing-view__field">
             <label for="input-monto-cuota-fija" class="billing-view__label">
-              Monto Global de Cuota Fija Mensual (USD)
+              Monto Global de Cuota Fija Mensual (GTQ)
             </label>
             <input
               id="input-monto-cuota-fija"
-              v-model="montoCuotaFijaUsd"
+              v-model="montoCuotaFijaGtq"
               type="number"
               step="0.01"
               class="billing-view__input tabular-num"
@@ -196,11 +196,11 @@ async function handleOpenBreakdown(reciboId: number): Promise<void> {
           <div class="billing-view__grid">
             <div class="billing-view__field">
               <label for="input-cuota-extra-monto" class="billing-view__label">
-                Cuota Extraordinaria Total (USD)
+                Cuota Extraordinaria Total (GTQ)
               </label>
               <input
                 id="input-cuota-extra-monto"
-                v-model="cuotaExtraUsd"
+                v-model="cuotaExtraGtq"
                 type="number"
                 step="0.01"
                 class="billing-view__input tabular-num"
@@ -278,7 +278,7 @@ async function handleOpenBreakdown(reciboId: number): Promise<void> {
               <span>
                 <strong>{{ f.nombre }}</strong> ({{ f.tipo }} · {{ f.porcentaje_recargo }}%)
               </span>
-              <strong class="tabular-num">${{ f.saldo_actual_usd }} USD</strong>
+              <strong class="tabular-num">Q{{ f.saldo_actual_gtq }}</strong>
             </li>
           </ul>
         </form>
@@ -302,19 +302,19 @@ async function handleOpenBreakdown(reciboId: number): Promise<void> {
           <div>
             <span>Facturado Bruto:</span>
             <strong class="tabular-num">
-              ${{ financeStore.data.ultimaFacturacion.total_facturado_bruto_usd }} USD
+              Q{{ financeStore.data.ultimaFacturacion.total_facturado_bruto_gtq }}
             </strong>
           </div>
           <div>
             <span>Créditos Aplicados:</span>
             <strong class="tabular-num">
-              -${{ financeStore.data.ultimaFacturacion.total_credito_descontado_usd }} USD
+              -Q{{ financeStore.data.ultimaFacturacion.total_credito_descontado_gtq }}
             </strong>
           </div>
           <div>
             <span>Facturado Neto:</span>
             <strong class="tabular-num">
-              ${{ financeStore.data.ultimaFacturacion.total_facturado_neto_usd }} USD
+              Q{{ financeStore.data.ultimaFacturacion.total_facturado_neto_gtq }}
             </strong>
           </div>
         </div>
@@ -334,7 +334,7 @@ async function handleOpenBreakdown(reciboId: number): Promise<void> {
           >
             <span>
               Unidad #{{ rec.unidad_id }} · {{ rec.periodo }} — Saldo:
-              <strong class="tabular-num">${{ rec.saldo_usd }} USD</strong>
+              <strong class="tabular-num">Q{{ rec.saldo_gtq }}</strong>
             </span>
             <button
               :id="`btn-inspect-recibo-${rec.recibo_id ?? idx + 1}`"

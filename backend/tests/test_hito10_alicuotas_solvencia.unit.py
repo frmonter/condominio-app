@@ -95,10 +95,10 @@ def test_reportar_pago_referencia_bancaria_duplicada_devuelve_409(client: TestCl
         recibo_id=1,
         usuario_id=2,
         monto=Decimal("50.00"),
-        moneda="USD",
-        monto_usd=Decimal("50.00"),
-        tasa_cambio=Decimal("36.5000"),
-        metodo_pago="ZELLE",
+        moneda="GTQ",
+        monto_gtq=Decimal("50.00"),
+        tasa_cambio=Decimal("7.3000"),
+        metodo_pago="TRANSFERENCIA",
         numero_referencia="REF-DUP-001",
         estado="APROBADO",
     )
@@ -110,8 +110,8 @@ def test_reportar_pago_referencia_bancaria_duplicada_devuelve_409(client: TestCl
         json={
             "recibo_id": 1,
             "monto": "50.00",
-            "moneda": "USD",
-            "metodo_pago": "ZELLE",
+            "moneda": "GTQ",
+            "metodo_pago": "TRANSFERENCIA",
             "numero_referencia": "REF-DUP-001",
         },
         headers=HEADERS,
@@ -123,13 +123,13 @@ def test_reportar_pago_referencia_bancaria_duplicada_devuelve_409(client: TestCl
 
 
 def test_reportar_pago_referencia_bancaria_unica_exito(client: TestClient) -> None:
-    tasa = TasaCambio(id=1, fecha=date.today(), tasa_usd_ves=Decimal("36.5000"))
+    tasa = TasaCambio(id=1, fecha=date.today(), tasa_usd_gtq=Decimal("7.3000"))
     recibo = Recibo(
         id=1,
         unidad_id=1,
         periodo="2026-10",
-        monto_usd=Decimal("100.00"),
-        monto_pagado_usd=Decimal("0.00"),
+        monto_gtq=Decimal("100.00"),
+        monto_pagado_gtq=Decimal("0.00"),
         estado="PENDIENTE",
         bloqueado=False,
     )
@@ -142,8 +142,8 @@ def test_reportar_pago_referencia_bancaria_unica_exito(client: TestClient) -> No
         json={
             "recibo_id": 1,
             "monto": "100.00",
-            "moneda": "USD",
-            "metodo_pago": "PAGO_MOVIL",
+            "moneda": "GTQ",
+            "metodo_pago": "DEPOSITO",
             "numero_referencia": "REF-UNICA-999",
         },
         headers=HEADERS,
@@ -158,10 +158,10 @@ def test_aprobar_pago_con_sobrepago_acredita_saldo_a_favor_unidad(client: TestCl
         recibo_id=1,
         usuario_id=5,
         monto=Decimal("125.00"),
-        moneda="USD",
-        monto_usd=Decimal("125.00"),
-        tasa_cambio=Decimal("36.5000"),
-        metodo_pago="ZELLE",
+        moneda="GTQ",
+        monto_gtq=Decimal("125.00"),
+        tasa_cambio=Decimal("7.3000"),
+        metodo_pago="TRANSFERENCIA",
         numero_referencia="REF-OVER-1",
         estado="EN_REVISION",
     )
@@ -169,8 +169,8 @@ def test_aprobar_pago_con_sobrepago_acredita_saldo_a_favor_unidad(client: TestCl
         id=1,
         unidad_id=3,
         periodo="2026-10",
-        monto_usd=Decimal("100.00"),
-        monto_pagado_usd=Decimal("0.00"),
+        monto_gtq=Decimal("100.00"),
+        monto_pagado_gtq=Decimal("0.00"),
         estado="PENDIENTE",
         bloqueado=False,
     )
@@ -179,7 +179,7 @@ def test_aprobar_pago_con_sobrepago_acredita_saldo_a_favor_unidad(client: TestCl
         identificador="A-03",
         estructura_id=1,
         alicuota=Decimal("25.0000"),
-        credito_disponible_usd=Decimal("10.00"),
+        credito_disponible_gtq=Decimal("10.00"),
     )
     session = _mock_session(_result(pago), _result(recibo), _result(unidad))
     _setup(session)
@@ -187,8 +187,8 @@ def test_aprobar_pago_con_sobrepago_acredita_saldo_a_favor_unidad(client: TestCl
     res = client.put("/api/pagos/12/aprobar", headers=HEADERS)
     assert res.status_code == 200
     assert recibo.estado == "PAGADO"
-    assert recibo.monto_pagado_usd == Decimal("100.00")
-    assert unidad.credito_disponible_usd == Decimal("35.00")
+    assert recibo.monto_pagado_gtq == Decimal("100.00")
+    assert unidad.credito_disponible_gtq == Decimal("35.00")
     audit = session.add.call_args[0][0]
     assert "Sobrepago acreditado" in audit.motivo
     app.dependency_overrides = {}
@@ -205,21 +205,21 @@ def test_actualizar_alicuota_unidad_exito_y_errores(client: TestClient) -> None:
         identificador="A-01",
         estructura_id=1,
         alicuota=Decimal("0.0000"),
-        cuota_fija_usd=None,
-        credito_disponible_usd=Decimal("0.00"),
+        cuota_fija_gtq=None,
+        credito_disponible_gtq=Decimal("0.00"),
     )
     session = _mock_session(_result(unidad))
     _setup(session)
 
     res = client.put(
         "/api/estructura/unidades/1/alicuota",
-        json={"alicuota": "33.3333", "cuota_fija_usd": "25.00"},
+        json={"alicuota": "33.3333", "cuota_fija_gtq": "25.00"},
         headers=HEADERS,
     )
     assert res.status_code == 200
     body = res.json()
     assert Decimal(body["alicuota"]) == Decimal("33.3333")
-    assert Decimal(body["cuota_fija_usd"]) == Decimal("25.00")
+    assert Decimal(body["cuota_fija_gtq"]) == Decimal("25.00")
 
     # 404 Unidad no encontrada
     session_404 = _mock_session(_result(None))
@@ -265,7 +265,7 @@ def test_crear_y_listar_fondos_condominio(client: TestClient) -> None:
         nombre="Fondo de Reserva Legal",
         tipo="RESERVA_LEGAL",
         porcentaje_recargo=Decimal("10.00"),
-        saldo_actual_usd=Decimal("0.00"),
+        saldo_actual_gtq=Decimal("0.00"),
         es_activo=True,
     )
     session_dup = _mock_session(_result(fondo_exist))
@@ -307,21 +307,21 @@ def test_facturar_periodo_modalidad_alicuota_con_credito_y_fondo(client: TestCli
             identificador="A-01",
             estructura_id=1,
             alicuota=Decimal("33.3333"),
-            credito_disponible_usd=Decimal("50.00"),
+            credito_disponible_gtq=Decimal("50.00"),
         ),
         Unidad(
             id=2,
             identificador="A-02",
             estructura_id=1,
             alicuota=Decimal("33.3333"),
-            credito_disponible_usd=Decimal("10.00"),
+            credito_disponible_gtq=Decimal("10.00"),
         ),
         Unidad(
             id=3,
             identificador="A-03",
             estructura_id=1,
             alicuota=Decimal("33.3334"),
-            credito_disponible_usd=Decimal("0.00"),
+            credito_disponible_gtq=Decimal("0.00"),
         ),
     ]
     egresos = [
@@ -331,9 +331,9 @@ def test_facturar_periodo_modalidad_alicuota_con_credito_y_fondo(client: TestCli
             categoria="MANTENIMIENTO",
             descripcion="Bomba de agua",
             monto=Decimal("100.00"),
-            moneda="USD",
-            monto_usd=Decimal("100.00"),
-            tasa_cambio=Decimal("36.5000"),
+            moneda="GTQ",
+            monto_gtq=Decimal("100.00"),
+            tasa_cambio=Decimal("7.3000"),
             es_gasto_comun=True,
         )
     ]
@@ -342,7 +342,7 @@ def test_facturar_periodo_modalidad_alicuota_con_credito_y_fondo(client: TestCli
         nombre="Fondo de Reserva Legal",
         tipo="RESERVA_LEGAL",
         porcentaje_recargo=Decimal("10.00"),
-        saldo_actual_usd=Decimal("200.00"),
+        saldo_actual_gtq=Decimal("200.00"),
         es_activo=True,
     )
     session = _mock_session(
@@ -360,7 +360,7 @@ def test_facturar_periodo_modalidad_alicuota_con_credito_y_fondo(client: TestCli
             "periodo": "2026-10",
             "modalidad": "ALICUOTA",
             "incluir_fondo_reserva": True,
-            "cuota_extraordinaria_total_usd": "30.00",
+            "cuota_extraordinaria_total_gtq": "30.00",
             "descripcion_cuota_extraordinaria": "Pintura fachada",
         },
         headers=HEADERS,
@@ -368,14 +368,14 @@ def test_facturar_periodo_modalidad_alicuota_con_credito_y_fondo(client: TestCli
     assert res.status_code == 201
     body = res.json()
     assert body["recibos_emitidos"] == 3
-    assert Decimal(body["total_egresos_comunes_usd"]) == Decimal("100.00")
-    assert Decimal(body["recargo_fondo_reserva_usd"]) == Decimal("10.00")
-    assert Decimal(body["cuota_extraordinaria_total_usd"]) == Decimal("30.00")
-    assert Decimal(body["total_facturado_bruto_usd"]) == Decimal("140.00")
-    assert fondo.saldo_actual_usd == Decimal("210.00")
-    # Unidad 1 tenía $50 de crédito y su cargo bruto era ~$46.67 -> queda cubierta al 100%
-    assert unidades[0].credito_disponible_usd > Decimal("0.00")
-    assert unidades[1].credito_disponible_usd == Decimal("0.00")
+    assert Decimal(body["total_egresos_comunes_gtq"]) == Decimal("100.00")
+    assert Decimal(body["recargo_fondo_reserva_gtq"]) == Decimal("10.00")
+    assert Decimal(body["cuota_extraordinaria_total_gtq"]) == Decimal("30.00")
+    assert Decimal(body["total_facturado_bruto_gtq"]) == Decimal("140.00")
+    assert fondo.saldo_actual_gtq == Decimal("210.00")
+    # Unidad 1 tenía Q50 de crédito y su cargo bruto era ~Q46.67 -> queda cubierta al 100%
+    assert unidades[0].credito_disponible_gtq > Decimal("0.00")
+    assert unidades[1].credito_disponible_gtq == Decimal("0.00")
     app.dependency_overrides = {}
 
 
@@ -386,16 +386,16 @@ def test_facturar_periodo_modalidad_cuota_fija_y_partes_iguales(client: TestClie
             identificador="C-01",
             estructura_id=1,
             alicuota=Decimal("0.0000"),
-            cuota_fija_usd=Decimal("35.00"),
-            credito_disponible_usd=Decimal("0.00"),
+            cuota_fija_gtq=Decimal("35.00"),
+            credito_disponible_gtq=Decimal("0.00"),
         ),
         Unidad(
             id=2,
             identificador="C-02",
             estructura_id=1,
             alicuota=Decimal("0.0000"),
-            cuota_fija_usd=None,
-            credito_disponible_usd=Decimal("0.00"),
+            cuota_fija_gtq=None,
+            credito_disponible_gtq=Decimal("0.00"),
         ),
     ]
     egresos = [
@@ -405,9 +405,9 @@ def test_facturar_periodo_modalidad_cuota_fija_y_partes_iguales(client: TestClie
             categoria="VIGILANCIA",
             descripcion="Servicio garita",
             monto=Decimal("40.00"),
-            moneda="USD",
-            monto_usd=Decimal("40.00"),
-            tasa_cambio=Decimal("36.5000"),
+            moneda="GTQ",
+            monto_gtq=Decimal("40.00"),
+            tasa_cambio=Decimal("7.3000"),
             es_gasto_comun=True,
         )
     ]
@@ -416,7 +416,7 @@ def test_facturar_periodo_modalidad_cuota_fija_y_partes_iguales(client: TestClie
         nombre="Fondo de Reserva Legal",
         tipo="RESERVA_LEGAL",
         porcentaje_recargo=Decimal("10.00"),
-        saldo_actual_usd=Decimal("100.00"),
+        saldo_actual_gtq=Decimal("100.00"),
         es_activo=True,
     )
     session_fija = _mock_session(
@@ -433,16 +433,16 @@ def test_facturar_periodo_modalidad_cuota_fija_y_partes_iguales(client: TestClie
         json={
             "periodo": "2026-11",
             "modalidad": "CUOTA_FIJA",
-            "monto_cuota_fija_usd": "25.00",
+            "monto_cuota_fija_gtq": "25.00",
         },
         headers=HEADERS,
     )
     assert res_fija.status_code == 201
     body_fija = res_fija.json()
     # 35.00 + 25.00 = 60.00 facturado - 40.00 egresos = +20.00 superávit al fondo
-    assert Decimal(body_fija["total_facturado_bruto_usd"]) == Decimal("60.00")
-    assert Decimal(body_fija["superavit_conciliado_fondo_usd"]) == Decimal("20.00")
-    assert fondo.saldo_actual_usd == Decimal("120.00")
+    assert Decimal(body_fija["total_facturado_bruto_gtq"]) == Decimal("60.00")
+    assert Decimal(body_fija["superavit_conciliado_fondo_gtq"]) == Decimal("20.00")
+    assert fondo.saldo_actual_gtq == Decimal("120.00")
 
     # Modalidad PARTES_IGUALES
     session_iguales = _mock_session(
@@ -463,7 +463,7 @@ def test_facturar_periodo_modalidad_cuota_fija_y_partes_iguales(client: TestClie
         headers=HEADERS,
     )
     assert res_iguales.status_code == 201
-    assert Decimal(res_iguales.json()["total_facturado_bruto_usd"]) == Decimal("40.00")
+    assert Decimal(res_iguales.json()["total_facturado_bruto_gtq"]) == Decimal("40.00")
     app.dependency_overrides = {}
 
 
@@ -494,7 +494,7 @@ def test_facturar_periodo_errores_y_bloqueos(client: TestClient) -> None:
     # 3. Periodo ya facturado
     session_ya = _mock_session(
         _result(None),
-        _result(Recibo(id=1, unidad_id=1, periodo="2026-10", monto_usd=Decimal("10.00"))),
+        _result(Recibo(id=1, unidad_id=1, periodo="2026-10", monto_gtq=Decimal("10.00"))),
     )
     _setup(session_ya)
     assert (
@@ -518,7 +518,7 @@ def test_facturar_periodo_errores_y_bloqueos(client: TestClient) -> None:
         == 400
     )
 
-    # 5. CUOTA_FIJA sin monto_cuota_fija_usd y unidad sin cuota_fija_usd
+    # 5. CUOTA_FIJA sin monto_cuota_fija_gtq y unidad sin cuota_fija_gtq
     uni_sin_fija = [Unidad(id=1, identificador="A-01", estructura_id=1, alicuota=Decimal("0.0000"))]
     session_bad_fija = _mock_session(
         _result(None),
@@ -544,14 +544,14 @@ def test_facturar_periodo_errores_y_bloqueos(client: TestClient) -> None:
             identificador="A-01",
             estructura_id=1,
             alicuota=Decimal("50.0000"),
-            credito_disponible_usd=Decimal("0.00"),
+            credito_disponible_gtq=Decimal("0.00"),
         ),
         Unidad(
             id=2,
             identificador="A-02",
             estructura_id=1,
             alicuota=Decimal("30.0000"),
-            credito_disponible_usd=Decimal("0.00"),
+            credito_disponible_gtq=Decimal("0.00"),
         ),
     ]
     session_bad_alic = _mock_session(
@@ -577,7 +577,7 @@ def test_facturar_periodo_errores_y_bloqueos(client: TestClient) -> None:
             identificador="A-01",
             estructura_id=1,
             alicuota=Decimal("100.0000"),
-            credito_disponible_usd=Decimal("0.00"),
+            credito_disponible_gtq=Decimal("0.00"),
         )
     ]
     session_ie = _mock_session(
@@ -605,21 +605,21 @@ def test_facturar_periodo_cuota_extraordinaria_prorrateada_por_alicuota(client: 
             identificador="A-01",
             estructura_id=1,
             alicuota=Decimal("50.0000"),
-            credito_disponible_usd=Decimal("0.00"),
+            credito_disponible_gtq=Decimal("0.00"),
         ),
         Unidad(
             id=2,
             identificador="A-02",
             estructura_id=1,
             alicuota=Decimal("30.0000"),
-            credito_disponible_usd=Decimal("0.00"),
+            credito_disponible_gtq=Decimal("0.00"),
         ),
         Unidad(
             id=3,
             identificador="A-03",
             estructura_id=1,
             alicuota=Decimal("20.0000"),
-            credito_disponible_usd=Decimal("0.00"),
+            credito_disponible_gtq=Decimal("0.00"),
         ),
     ]
     session = _mock_session(
@@ -637,7 +637,7 @@ def test_facturar_periodo_cuota_extraordinaria_prorrateada_por_alicuota(client: 
             "periodo": "2027-01",
             "modalidad": "ALICUOTA",
             "incluir_fondo_reserva": False,
-            "cuota_extraordinaria_total_usd": "100.00",
+            "cuota_extraordinaria_total_gtq": "100.00",
             "descripcion_cuota_extraordinaria": "Impermeabilización techo",
         },
         headers=HEADERS,
@@ -648,7 +648,7 @@ def test_facturar_periodo_cuota_extraordinaria_prorrateada_por_alicuota(client: 
         for call in session.add.call_args_list
         if isinstance(call.args[0], ReciboItem) and call.args[0].tipo_item == "CUOTA_EXTRAORDINARIA"
     ]
-    montos_extra = sorted(item.monto_usd for item in extra_items)
+    montos_extra = sorted(item.monto_gtq for item in extra_items)
     assert montos_extra == [Decimal("20.00"), Decimal("30.00"), Decimal("50.00")]
     app.dependency_overrides = {}
 
@@ -658,20 +658,20 @@ def test_obtener_desglose_recibo_exito_y_permisos(client: TestClient) -> None:
         id=7,
         unidad_id=2,
         periodo="2026-10",
-        monto_usd=Decimal("35.00"),
-        monto_pagado_usd=Decimal("0.00"),
+        monto_gtq=Decimal("35.00"),
+        monto_pagado_gtq=Decimal("0.00"),
         estado="PENDIENTE",
         bloqueado=False,
     )
     unidad = Unidad(id=2, identificador="B-02", estructura_id=1, alicuota=Decimal("25.0000"))
     items = [
-        ReciboItem(id=1, recibo_id=7, tipo_item="GASTO_COMUN", descripcion="Gasto común", monto_usd=Decimal("45.00")),
+        ReciboItem(id=1, recibo_id=7, tipo_item="GASTO_COMUN", descripcion="Gasto común", monto_gtq=Decimal("45.00")),
         ReciboItem(
             id=2,
             recibo_id=7,
             tipo_item="ABONO_CREDITO_PREVIO",
             descripcion="Abono previo",
-            monto_usd=Decimal("-10.00"),
+            monto_gtq=Decimal("-10.00"),
         ),
     ]
     session = _mock_session(_result(recibo), _result(unidad), _result_list(items))
@@ -681,7 +681,7 @@ def test_obtener_desglose_recibo_exito_y_permisos(client: TestClient) -> None:
     assert res.status_code == 200
     body = res.json()
     assert body["identificador_unidad"] == "B-02"
-    assert Decimal(body["credito_descontado_usd"]) == Decimal("10.00")
+    assert Decimal(body["credito_descontado_gtq"]) == Decimal("10.00")
     assert len(body["items"]) == 2
 
     # Propietario de otra unidad recibe 403
@@ -711,7 +711,7 @@ def test_emitir_y_verificar_certificado_solvencia(client: TestClient) -> None:
     assert res.status_code == 201
     cert_data = res.json()
     assert cert_data["identificador_unidad"] == "PH-01"
-    assert Decimal(cert_data["deuda_verificada_usd"]) == Decimal("0.00")
+    assert Decimal(cert_data["deuda_verificada_gtq"]) == Decimal("0.00")
     assert cert_data["qr_token"].endswith(cert_data["firma_hmac"])
 
     # Verificar el certificado emitido
@@ -724,7 +724,7 @@ def test_emitir_y_verificar_certificado_solvencia(client: TestClient) -> None:
         emitido_por_id=44,
         fecha_emision=datetime.now(UTC),
         fecha_vencimiento=venc,
-        deuda_verificada_usd=Decimal("0.00"),
+        deuda_verificada_gtq=Decimal("0.00"),
         firma_hmac=firma,
     )
     session_verif = _mock_session(_result(cert_orm), _result(unidad), _result(Decimal("0.00")))
@@ -753,7 +753,7 @@ def test_emitir_solvencia_con_deuda_pendiente_devuelve_409(client: TestClient) -
 
     res = client.post("/api/finanzas/solvencia/4", headers=HEADERS)
     assert res.status_code == 409
-    assert "60.00 USD" in res.json()["detail"]
+    assert "60.00 GTQ" in res.json()["detail"]
 
     # Unidad no encontrada -> 404
     session_no_u = _mock_session(_result(None))
@@ -777,19 +777,19 @@ def test_facturacion_lph_nucleo_helpers_cuota_fija_variables_y_recibos() -> None
         identificador="A-01",
         estructura_id=1,
         alicuota=Decimal("60.0000"),
-        cuota_fija_usd=Decimal("40.00"),
-        credito_disponible_usd=Decimal("50.00"),
+        cuota_fija_gtq=Decimal("40.00"),
+        credito_disponible_gtq=Decimal("50.00"),
     )
     u2 = Unidad(
         id=2,
         identificador="A-02",
         estructura_id=1,
         alicuota=Decimal("40.0000"),
-        cuota_fija_usd=Decimal("0.00"),
-        credito_disponible_usd=Decimal("5.00"),
+        cuota_fija_gtq=Decimal("0.00"),
+        credito_disponible_gtq=Decimal("5.00"),
     )
 
-    req_fija = FacturarPeriodoRequest(periodo="2026-10", modalidad="CUOTA_FIJA", monto_cuota_fija_usd=Decimal("20.00"))
+    req_fija = FacturarPeriodoRequest(periodo="2026-10", modalidad="CUOTA_FIJA", monto_cuota_fija_gtq=Decimal("20.00"))
     items_fija, superavit = _cargos_cuota_fija(req_fija, [u1, u2], Decimal("50.00"))
     assert items_fija[1][0][0] == "CUOTA_FIJA"
     assert items_fija[1][0][1] == "Cuota fija mensual (2026-10)"
@@ -802,7 +802,7 @@ def test_facturacion_lph_nucleo_helpers_cuota_fija_variables_y_recibos() -> None
     assert superavit_cero == Decimal("-20.00")
 
     # Error si una unidad no tiene cuota individual (>0) ni global
-    req_fija_sin_monto = FacturarPeriodoRequest(periodo="2026-10", modalidad="CUOTA_FIJA", monto_cuota_fija_usd=None)
+    req_fija_sin_monto = FacturarPeriodoRequest(periodo="2026-10", modalidad="CUOTA_FIJA", monto_cuota_fija_gtq=None)
     with pytest.raises(ErrorFinanciero, match="CUOTA_FIJA"):
         _cargos_cuota_fija(req_fija_sin_monto, [u1, u2], Decimal("10.00"))
 
@@ -833,7 +833,7 @@ def test_facturacion_lph_nucleo_helpers_cuota_fija_variables_y_recibos() -> None
     req_ext_pi = FacturarPeriodoRequest(
         periodo="2026-10",
         modalidad="PARTES_IGUALES",
-        cuota_extraordinaria_total_usd=Decimal("30.00"),
+        cuota_extraordinaria_total_gtq=Decimal("30.00"),
     )
     items_ext: dict[int, list[tuple[str, str, Decimal]]] = {1: [], 2: []}
     _anexar_cuota_extraordinaria(req_ext_pi, [u1, u2], items_ext)
@@ -846,14 +846,14 @@ def test_facturacion_lph_nucleo_helpers_cuota_fija_variables_y_recibos() -> None
     req_ext_al = FacturarPeriodoRequest(
         periodo="2026-10",
         modalidad="ALICUOTA",
-        cuota_extraordinaria_total_usd=Decimal("30.00"),
+        cuota_extraordinaria_total_gtq=Decimal("30.00"),
     )
     u_bad = Unidad(
         id=3,
         identificador="A-03",
         estructura_id=1,
         alicuota=Decimal("10.0000"),
-        credito_disponible_usd=Decimal("0.00"),
+        credito_disponible_gtq=Decimal("0.00"),
     )
     with pytest.raises(ErrorFinanciero, match="100.0000%"):
         _anexar_cuota_extraordinaria(req_ext_al, [u1, u_bad], {1: [], 3: []})
@@ -862,8 +862,8 @@ def test_facturacion_lph_nucleo_helpers_cuota_fija_variables_y_recibos() -> None
     req_mod_fija = FacturarPeriodoRequest(
         periodo="2026-10",
         modalidad="CUOTA_FIJA",
-        monto_cuota_fija_usd=Decimal("20.00"),
-        cuota_extraordinaria_total_usd=Decimal("20.00"),
+        monto_cuota_fija_gtq=Decimal("20.00"),
+        cuota_extraordinaria_total_gtq=Decimal("20.00"),
     )
     items_mod_fija, sup_mod = calcular_cargos_modalidad(req_mod_fija, [u1, u2], Decimal("50.00"), Decimal("0.00"))
     assert sup_mod == Decimal("10.00")
@@ -873,7 +873,7 @@ def test_facturacion_lph_nucleo_helpers_cuota_fija_variables_y_recibos() -> None
         periodo="2026-10",
         modalidad="ALICUOTA",
         incluir_fondo_reserva=True,
-        cuota_extraordinaria_total_usd=Decimal("20.00"),
+        cuota_extraordinaria_total_gtq=Decimal("20.00"),
     )
     items_mod_al, sup_mod_al = calcular_cargos_modalidad(req_mod_al, [u1, u2], Decimal("100.00"), Decimal("10.00"))
     assert sup_mod_al == Decimal("0.00")
@@ -889,21 +889,21 @@ def test_facturacion_lph_nucleo_helpers_cuota_fija_variables_y_recibos() -> None
     )
     assert bruto_1 == Decimal("40.00")
     assert cred_1 == Decimal("40.00")
-    assert recibo_pagado.monto_usd == Decimal("40.00")
-    assert recibo_pagado.monto_pagado_usd == Decimal("40.00")
+    assert recibo_pagado.monto_gtq == Decimal("40.00")
+    assert recibo_pagado.monto_pagado_gtq == Decimal("40.00")
     assert recibo_pagado.estado == "PAGADO"
     assert recibo_pagado.bloqueado is False
-    assert u1.credito_disponible_usd == Decimal("10.00")
+    assert u1.credito_disponible_gtq == Decimal("10.00")
     assert r_items[-1].tipo_item == "ABONO_CREDITO_PREVIO"
     assert r_items[-1].descripcion == "Abono automático de saldo a favor disponible"
-    assert r_items[-1].monto_usd == Decimal("-40.00")
+    assert r_items[-1].monto_gtq == Decimal("-40.00")
 
     # Cargo bruto cero produce recibo en 0.00 marcado como PAGADO sin abono
     recibo_cero, items_cero, bruto_cero, cred_cero = _crear_recibo_e_items_unidad(u1, "2026-10", [])
     assert bruto_cero == Decimal("0.00")
     assert cred_cero == Decimal("0.00")
-    assert recibo_cero.monto_usd == Decimal("0.00")
-    assert recibo_cero.monto_pagado_usd == Decimal("0.00")
+    assert recibo_cero.monto_gtq == Decimal("0.00")
+    assert recibo_cero.monto_pagado_gtq == Decimal("0.00")
     assert recibo_cero.estado == "PAGADO"
     assert items_cero == []
 
@@ -915,9 +915,9 @@ def test_facturacion_lph_nucleo_helpers_cuota_fija_variables_y_recibos() -> None
     )
     assert bruto_2 == Decimal("25.00")
     assert cred_2 == Decimal("5.00")
-    assert recibo_pend.monto_usd == Decimal("20.00")
+    assert recibo_pend.monto_gtq == Decimal("20.00")
     assert recibo_pend.estado == "PENDIENTE"
-    assert u2.credito_disponible_usd == Decimal("0.00")
+    assert u2.credito_disponible_gtq == Decimal("0.00")
     assert len(r_items2) == 2
 
 
@@ -932,9 +932,9 @@ async def test_cargar_contexto_facturacion_respaldo_diez_por_ciento() -> None:
         categoria="MANT",
         descripcion="Bomba",
         monto=Decimal("200.00"),
-        moneda="USD",
-        monto_usd=Decimal("200.00"),
-        tasa_cambio=Decimal("36.5000"),
+        moneda="GTQ",
+        monto_gtq=Decimal("200.00"),
+        tasa_cambio=Decimal("7.3000"),
         es_gasto_comun=True,
     )
     session = _mock_session(_result_list([u]), _result_list([egreso]), _result(None))
@@ -953,14 +953,14 @@ async def test_persistir_lote_facturacion_actualiza_fondos_y_recibos() -> None:
         identificador="A-01",
         estructura_id=1,
         alicuota=Decimal("100.0000"),
-        credito_disponible_usd=Decimal("10.00"),
+        credito_disponible_gtq=Decimal("10.00"),
     )
     fondo_fija = FondoCondominio(
         id=1,
         nombre="Reserva",
         tipo="RESERVA_LEGAL",
         porcentaje_recargo=Decimal("10.00"),
-        saldo_actual_usd=Decimal("100.00"),
+        saldo_actual_gtq=Decimal("100.00"),
         es_activo=True,
     )
     session_fija = _mock_session()
@@ -975,7 +975,7 @@ async def test_persistir_lote_facturacion_actualiza_fondos_y_recibos() -> None:
         Decimal("12.00"),
     )
     assert (tot_bruto, tot_cred, tot_neto) == (Decimal("40.00"), Decimal("10.00"), Decimal("30.00"))
-    assert fondo_fija.saldo_actual_usd == Decimal("112.00")
+    assert fondo_fija.saldo_actual_gtq == Decimal("112.00")
     session_fija.flush.assert_awaited_once()
     session_fija.commit.assert_awaited_once()
     items_fija_add = [c.args[0] for c in session_fija.add.call_args_list if isinstance(c.args[0], ReciboItem)]
@@ -987,14 +987,14 @@ async def test_persistir_lote_facturacion_actualiza_fondos_y_recibos() -> None:
         identificador="A-02",
         estructura_id=1,
         alicuota=Decimal("100.0000"),
-        credito_disponible_usd=Decimal("0.00"),
+        credito_disponible_gtq=Decimal("0.00"),
     )
     fondo_al = FondoCondominio(
         id=2,
         nombre="Reserva 2",
         tipo="RESERVA_LEGAL",
         porcentaje_recargo=Decimal("10.00"),
-        saldo_actual_usd=Decimal("50.00"),
+        saldo_actual_gtq=Decimal("50.00"),
         es_activo=True,
     )
     session_al = _mock_session()
@@ -1009,4 +1009,4 @@ async def test_persistir_lote_facturacion_actualiza_fondos_y_recibos() -> None:
         Decimal("99.00"),
     )
     assert (b2, c2, n2) == (Decimal("60.00"), Decimal("0.00"), Decimal("60.00"))
-    assert fondo_al.saldo_actual_usd == Decimal("56.00")
+    assert fondo_al.saldo_actual_gtq == Decimal("56.00")

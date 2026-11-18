@@ -79,8 +79,8 @@ export interface PaqueteDTO {
 export interface AreaSocialCreateDTO {
   nombre: string;
   aforo_maximo: number;
-  costo_uso_usd: string;
-  deposito_garantia_usd: string;
+  costo_uso_gtq: string;
+  deposito_garantia_gtq: string;
   requiere_solvencia_estricta: boolean;
 }
 
@@ -88,8 +88,8 @@ export interface AreaSocialDTO {
   id: number;
   nombre: string;
   aforo_maximo: number;
-  costo_uso_usd: string;
-  deposito_garantia_usd: string;
+  costo_uso_gtq: string;
+  deposito_garantia_gtq: string;
   requiere_solvencia_estricta: boolean;
   es_activa: boolean;
 }

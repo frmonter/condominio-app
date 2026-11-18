@@ -15,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from src.database import get_db
-from src.dependencies import get_current_user, verificar_roles, verificar_usuario_activo
+from src.dependencies import get_current_user, roles_efectivos, verificar_roles, verificar_usuario_activo
 from src.facturacion_lph import (
     calcular_cargos_modalidad,
     cargar_contexto_facturacion,
@@ -28,7 +28,7 @@ from src.finanzas import (
     calcular_deuda_total,
     calcular_saldo_pendiente,
     construir_qr_token_solvencia,
-    convertir_a_usd,
+    convertir_a_gtq,
     cuantizar,
     generar_firma_solvencia,
     verificar_firma_solvencia,
@@ -88,9 +88,9 @@ async def registrar_tasa(
     result = await db.execute(select(TasaCambio).where(TasaCambio.fecha == fecha_objetivo))
     tasa = result.scalars().first()
     if tasa:
-        tasa.tasa_usd_ves = datos.tasa_usd_ves
+        tasa.tasa_usd_gtq = datos.tasa_usd_gtq
     else:
-        tasa = TasaCambio(fecha=fecha_objetivo, tasa_usd_ves=datos.tasa_usd_ves)
+        tasa = TasaCambio(fecha=fecha_objetivo, tasa_usd_gtq=datos.tasa_usd_gtq)
         db.add(tasa)
     await db.commit()
     await db.refresh(tasa)
@@ -164,15 +164,15 @@ async def registrar_egreso(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="La tasa de cambio del día no ha sido registrada",
             )
-        monto_usd = convertir_a_usd(datos.monto, datos.moneda, tasa.tasa_usd_ves)
+        monto_gtq = convertir_a_gtq(datos.monto, datos.moneda, tasa.tasa_usd_gtq)
         egreso = Egreso(
             periodo=datos.periodo,
             categoria=datos.categoria,
             descripcion=datos.descripcion,
             monto=datos.monto,
             moneda=datos.moneda,
-            monto_usd=monto_usd,
-            tasa_cambio=tasa.tasa_usd_ves,
+            monto_gtq=monto_gtq,
+            tasa_cambio=tasa.tasa_usd_gtq,
             url_factura=datos.url_factura,
             incidencia_id=datos.incidencia_id,
             es_gasto_comun=datos.es_gasto_comun,
@@ -180,7 +180,7 @@ async def registrar_egreso(
         db.add(egreso)
         await db.commit()
         await db.refresh(egreso)
-        return {"id": egreso.id, "monto_usd": str(egreso.monto_usd)}
+        return {"id": egreso.id, "monto_gtq": str(egreso.monto_gtq)}
     except HTTPException:
         raise
     except ErrorFinanciero as exc:
@@ -209,7 +209,7 @@ async def resumen_financiero(
     recibo_stmt = select(Recibo).order_by(Recibo.id.asc())
     egreso_stmt = select(
         Egreso.categoria,
-        func.coalesce(func.sum(Egreso.monto_usd), CERO),
+        func.coalesce(func.sum(Egreso.monto_gtq), CERO),
     ).group_by(Egreso.categoria)
     if periodo is not None:
         recibo_stmt = recibo_stmt.where(Recibo.periodo == periodo)
@@ -217,7 +217,7 @@ async def resumen_financiero(
 
     recibos_result = await db.execute(recibo_stmt)
     recibos = list(recibos_result.scalars().all())
-    deuda_total = calcular_deuda_total([(r.monto_usd, r.monto_pagado_usd) for r in recibos])
+    deuda_total = calcular_deuda_total([(r.monto_gtq, r.monto_pagado_gtq) for r in recibos])
 
     egresos_result = await db.execute(egreso_stmt)
     total_egresos = Decimal("0.00")
@@ -228,17 +228,17 @@ async def resumen_financiero(
         gastos_por_categoria[str(categoria)] = monto_q
 
     return {
-        "deuda_total_usd": str(cuantizar(deuda_total)),
-        "total_egresos_usd": str(cuantizar(total_egresos)),
+        "deuda_total_gtq": str(cuantizar(deuda_total)),
+        "total_egresos_gtq": str(cuantizar(total_egresos)),
         "gastos_por_categoria": {clave: str(cuantizar(valor)) for clave, valor in gastos_por_categoria.items()},
         "estado_cobranza": [
             {
                 "recibo_id": r.id,
                 "unidad_id": r.unidad_id,
                 "periodo": r.periodo,
-                "monto_usd": str(cuantizar(r.monto_usd)),
+                "monto_gtq": str(cuantizar(r.monto_gtq)),
                 "estado": r.estado,
-                "saldo_usd": str(calcular_saldo_pendiente(r.monto_usd, r.monto_pagado_usd)),
+                "saldo_gtq": str(calcular_saldo_pendiente(r.monto_gtq, r.monto_pagado_gtq)),
             }
             for r in recibos
         ],
@@ -328,7 +328,7 @@ async def crear_fondo_condominio(
         nombre=datos.nombre.strip(),
         tipo=datos.tipo,
         porcentaje_recargo=cuantizar(datos.porcentaje_recargo),
-        saldo_actual_usd=CERO,
+        saldo_actual_gtq=CERO,
         es_activo=True,
     )
     db.add(fondo)
@@ -349,7 +349,7 @@ async def listar_fondos_condominio(
     db: AsyncSession = Depends(get_db),
     usuario: Usuario = Depends(get_current_user),
 ) -> list[FondoCondominio]:
-    """Lista los fondos patrimoniales activos del condominio y sus saldos en USD."""
+    """Lista los fondos patrimoniales activos del condominio y sus saldos en GTQ."""
     verificar_usuario_activo(usuario)
     res = await db.execute(
         select(FondoCondominio).where(FondoCondominio.es_activo.is_(True)).order_by(FondoCondominio.id.asc())
@@ -419,18 +419,18 @@ async def facturar_periodo(
         periodo=datos.periodo,
         modalidad=datos.modalidad,
         recibos_emitidos=len(unidades),
-        total_egresos_comunes_usd=total_egresos,
-        recargo_fondo_reserva_usd=recargo_reserva,
-        cuota_extraordinaria_total_usd=cuantizar(datos.cuota_extraordinaria_total_usd),
-        total_facturado_bruto_usd=total_bruto,
-        total_credito_descontado_usd=total_credito,
-        total_facturado_neto_usd=total_neto,
-        superavit_conciliado_fondo_usd=superavit_fondo,
+        total_egresos_comunes_gtq=total_egresos,
+        recargo_fondo_reserva_gtq=recargo_reserva,
+        cuota_extraordinaria_total_gtq=cuantizar(datos.cuota_extraordinaria_total_gtq),
+        total_facturado_bruto_gtq=total_bruto,
+        total_credito_descontado_gtq=total_credito,
+        total_facturado_neto_gtq=total_neto,
+        superavit_conciliado_fondo_gtq=superavit_fondo,
     )
 
 
 async def _verificar_acceso_unidad(db: AsyncSession, usuario: Usuario, unidad_id: int) -> None:
-    if getattr(usuario, "rol", "") in _ROLES_JUNTA:
+    if getattr(usuario, "rol", "") in roles_efectivos(_ROLES_JUNTA):
         return
     res = await db.execute(
         select(ContratoOcupacion).where(
@@ -480,7 +480,7 @@ async def obtener_desglose_recibo(
     )
     items = list(items_res.scalars().all())
     credito_desc = cuantizar(
-        sum((-it.monto_usd for it in items if it.tipo_item == "ABONO_CREDITO_PREVIO" and it.monto_usd < CERO), CERO)
+        sum((-it.monto_gtq for it in items if it.tipo_item == "ABONO_CREDITO_PREVIO" and it.monto_gtq < CERO), CERO)
     )
 
     return ReciboDesgloseResponse(
@@ -489,10 +489,10 @@ async def obtener_desglose_recibo(
         identificador_unidad=identificador,
         alicuota_aplicada=alicuota,
         periodo=recibo.periodo,
-        monto_usd=cuantizar(recibo.monto_usd),
-        monto_pagado_usd=cuantizar(recibo.monto_pagado_usd),
-        saldo_pendiente_usd=calcular_saldo_pendiente(recibo.monto_usd, recibo.monto_pagado_usd),
-        credito_descontado_usd=credito_desc,
+        monto_gtq=cuantizar(recibo.monto_gtq),
+        monto_pagado_gtq=cuantizar(recibo.monto_pagado_gtq),
+        saldo_pendiente_gtq=calcular_saldo_pendiente(recibo.monto_gtq, recibo.monto_pagado_gtq),
+        credito_descontado_gtq=credito_desc,
         estado=recibo.estado,
         bloqueado=recibo.bloqueado,
         items=[ReciboItemResponse.model_validate(it) for it in items],
@@ -507,7 +507,7 @@ def _fin_de_mes(fecha_base: date) -> date:
 async def _obtener_deuda_viva_unidad(db: AsyncSession, unidad_id: int) -> Decimal:
     """Calcula en SQL la deuda viva total (> 0.00) de una unidad sobre recibos no pagados."""
     stmt = select(
-        func.coalesce(func.sum(Recibo.monto_usd - Recibo.monto_pagado_usd), CERO),
+        func.coalesce(func.sum(Recibo.monto_gtq - Recibo.monto_pagado_gtq), CERO),
     ).where(Recibo.unidad_id == unidad_id, Recibo.estado != "PAGADO")
     res = await db.execute(stmt)
     raw = res.scalars().first()
@@ -533,7 +533,7 @@ async def emitir_certificado_solvencia(
     redis_client: Any = Depends(get_redis_client),
     usuario: Usuario = Depends(get_current_user),
 ) -> CertificadoSolvenciaResponse:
-    """Verifica deuda cero ($0.00 USD) y emite un Certificado de Solvencia firmado con HMAC-SHA256 y JTI."""
+    """Verifica deuda cero (Q0.00) y emite un Certificado de Solvencia firmado con HMAC-SHA256 y JTI."""
     verificar_usuario_activo(usuario)
     await _verificar_acceso_unidad(db, usuario, unidad_id)
 
@@ -557,7 +557,7 @@ async def emitir_certificado_solvencia(
     if deuda > CERO:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"La unidad presenta deuda pendiente de {deuda} USD y no puede emitir Certificado de Solvencia.",
+            detail=f"La unidad presenta deuda pendiente de {deuda} GTQ y no puede emitir Certificado de Solvencia.",
         )
 
     hoy = date.today()
@@ -575,7 +575,7 @@ async def emitir_certificado_solvencia(
         emitido_por_id=usuario.id,
         fecha_emision=ahora,
         fecha_vencimiento=vencimiento,
-        deuda_verificada_usd=CERO,
+        deuda_verificada_gtq=CERO,
         firma_hmac=firma,
     )
     db.add(cert)
@@ -592,7 +592,7 @@ async def emitir_certificado_solvencia(
         emitido_por_id=cert.emitido_por_id,
         fecha_emision=cert.fecha_emision or ahora,
         fecha_vencimiento=cert.fecha_vencimiento,
-        deuda_verificada_usd=CERO,
+        deuda_verificada_gtq=CERO,
         firma_hmac=cert.firma_hmac,
         qr_token=qr_token,
     )
@@ -650,6 +650,6 @@ async def verificar_certificado_solvencia(
         identificador_unidad=identificador,
         fecha_vencimiento=cert.fecha_vencimiento,
         vigente=vigente,
-        deuda_verificada_usd=deuda_viva,
+        deuda_verificada_gtq=deuda_viva,
         firma_hmac=cert.firma_hmac,
     )

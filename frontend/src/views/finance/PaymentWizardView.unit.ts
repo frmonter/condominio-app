@@ -23,11 +23,11 @@ describe('PaymentWizardView.vue', () => {
       id: 90,
       recibo_id: 1,
       usuario_id: 2,
-      monto: '1825.00',
-      moneda: 'VES',
-      monto_usd: '50.00',
-      tasa_cambio: '36.50',
-      metodo_pago: 'PAGO_MOVIL',
+      monto: '500.00',
+      moneda: 'GTQ',
+      monto_gtq: '50.00',
+      tasa_cambio: '7.70',
+      metodo_pago: 'DEPOSITO',
       numero_referencia: '88776655',
       url_comprobante: null,
       estado: 'EN_REVISION',
@@ -43,7 +43,7 @@ describe('PaymentWizardView.vue', () => {
     expect(wrapper.find('.banner--error').text()).toContain('mayor a cero');
 
     // Monto válido -> Paso 2
-    await wrapper.find('#step-1-monto').setValue('1825.00');
+    await wrapper.find('#step-1-monto').setValue('500.00');
     await wrapper.find('#btn-step-1-next').trigger('click');
     expect(wrapper.find('#step-2-metodo').exists()).toBe(true);
 
@@ -62,6 +62,26 @@ describe('PaymentWizardView.vue', () => {
     expect(pushMock).toHaveBeenCalledWith('/dashboard');
   });
 
+  it('convierte pagos en USD a quetzales con el tipo de cambio del día', async () => {
+    const wrapper = mount(PaymentWizardView);
+    // Por defecto: Q500.00 en GTQ cubre el saldo de Q500.00
+    expect(wrapper.find('#monto-hint').text()).toContain('500.00 GTQ');
+    expect(wrapper.find('#monto-hint').text()).toContain('64.94');
+
+    await wrapper.find('#select-moneda').setValue('USD');
+    await wrapper.find('#step-1-monto').setValue('50');
+    // US$50 x Q7.70 = Q385.00 < Q500.00 -> abono parcial
+    expect(wrapper.find('#monto-hint').text()).toContain('385.00 GTQ');
+    expect(wrapper.find('#monto-hint').text()).toContain('50.00');
+    expect(wrapper.find('#badge-tipo-cobertura').text()).toContain('ABONO PARCIAL');
+
+    await wrapper.find('#step-1-monto').setValue('70');
+    expect(wrapper.find('#badge-tipo-cobertura').text()).toContain('PAGO TOTAL');
+
+    await wrapper.find('#step-1-monto').setValue('-1');
+    expect(wrapper.find('#monto-hint').text()).toContain('0.00 GTQ');
+  });
+
   it('rechaza comprobantes que superan la cuota máxima de 2 MB', async () => {
     const wrapper = mount(PaymentWizardView);
     await wrapper.find('#btn-step-1-next').trigger('click');
@@ -78,7 +98,7 @@ describe('PaymentWizardView.vue', () => {
 
     expect(wrapper.find('.banner--error').text()).toContain('2 MB');
 
-    // Archivo válido <= 2 MB y navegación atrás / moneda USD / método EFECTIVO / fallo de red
+    // Archivo válido <= 2 MB y navegación atrás / moneda GTQ / método EFECTIVO / fallo de red
     const validFile = new File([new Uint8Array(1024)], 'comprobante.png', {
       type: 'image/png',
     });
@@ -91,7 +111,7 @@ describe('PaymentWizardView.vue', () => {
 
     await wrapper.find('#step-2-metodo').setValue('EFECTIVO');
     await wrapper.find('#btn-step-2-back').trigger('click');
-    await wrapper.find('#select-moneda').setValue('USD');
+    await wrapper.find('#select-moneda').setValue('GTQ');
     await wrapper.find('#step-1-monto').setValue('20.00');
     expect(wrapper.find('#badge-tipo-cobertura').text()).toContain('ABONO PARCIAL');
 

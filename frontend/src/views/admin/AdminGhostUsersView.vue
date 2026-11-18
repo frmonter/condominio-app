@@ -104,7 +104,7 @@ async function handleActivateGhost(userId: number): Promise<void> {
           <div class="ghost-users__info">
             <h2 class="ghost-users__name">{{ user.nombre }}</h2>
             <p class="ghost-users__meta">
-              Cédula: <strong>{{ user.cedula }}</strong> · Correo: {{ user.correo }} · Tel:
+              DPI: <strong>{{ user.cedula }}</strong> · Correo: {{ user.correo }} · Tel:
               {{ user.telefono }}
             </p>
           </div>

@@ -17,21 +17,21 @@ describe('TreasuryClosingView.vue', () => {
     HTMLDialogElement.prototype.close = vi.fn();
   });
 
-  it('permite guardar tasa BCV, registrar egreso y activar el Candado Contable con confirmación modal', async () => {
+  it('permite guardar tipo de cambio, registrar egreso y activar el Candado Contable con confirmación modal', async () => {
     const postSpy = vi
       .spyOn(apiClient, 'post')
-      .mockResolvedValueOnce({ id: 3, fecha: '2026-10-30', tasa_usd_ves: '39.90' })
-      .mockResolvedValueOnce({ id: 15, monto_usd: '120.00' })
+      .mockResolvedValueOnce({ id: 3, fecha: '2026-10-30', tasa_usd_gtq: '7.75' })
+      .mockResolvedValueOnce({ id: 15, monto_gtq: '120.00' })
       .mockResolvedValueOnce({ periodo: '2026-10', estado: 'CERRADO' });
 
     const wrapper = mount(TreasuryClosingView);
 
-    // 1. Guardar tasa BCV
-    await wrapper.find('#input-tasa-bcv').setValue('39.90');
+    // 1. Guardar tipo de cambio
+    await wrapper.find('#input-tasa-bcv').setValue('7.75');
     await wrapper.findAll('form')[0]?.trigger('submit.prevent');
     await flushPromises();
-    expect(postSpy).toHaveBeenCalledWith('/api/finanzas/tasa', { tasa_usd_ves: '39.9' });
-    expect(wrapper.text()).toContain('39.90 VES/USD');
+    expect(postSpy).toHaveBeenCalledWith('/api/finanzas/tasa', { tasa_usd_gtq: '7.75' });
+    expect(wrapper.text()).toContain('Q7.75 por US$1');
 
     // 2. Registrar egreso
     await wrapper.find('#input-egreso-descripcion').setValue('Reparación sello mecánico');
@@ -95,7 +95,7 @@ describe('TreasuryClosingView.vue', () => {
 
     await wrapper.find('#input-egreso-periodo').setValue('2026-11');
     await wrapper.find('#select-egreso-categoria').setValue('Vigilancia');
-    await wrapper.find('#select-egreso-moneda').setValue('VES');
+    await wrapper.find('#select-egreso-moneda').setValue('USD');
 
     vi.spyOn(apiClient, 'post')
       .mockRejectedValueOnce(new ApiError(400, 'Tasa inválida'))

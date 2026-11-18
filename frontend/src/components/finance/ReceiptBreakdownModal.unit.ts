@@ -9,10 +9,10 @@ const sampleDesglose: ReciboDesgloseDTO = {
   identificador_unidad: 'Apto 1-A',
   alicuota_aplicada: '33.3333',
   periodo: '2026-10',
-  monto_usd: '35.00',
-  monto_pagado_usd: '0.00',
-  saldo_pendiente_usd: '35.00',
-  credito_descontado_usd: '10.00',
+  monto_gtq: '35.00',
+  monto_pagado_gtq: '0.00',
+  saldo_pendiente_gtq: '35.00',
+  credito_descontado_gtq: '10.00',
   estado: 'PENDIENTE',
   bloqueado: false,
   items: [
@@ -21,14 +21,14 @@ const sampleDesglose: ReciboDesgloseDTO = {
       recibo_id: 7,
       tipo_item: 'GASTO_COMUN',
       descripcion: 'Cuota parte de gastos comunes (2026-10)',
-      monto_usd: '45.00',
+      monto_gtq: '45.00',
     },
     {
       id: 2,
       recibo_id: 7,
       tipo_item: 'ABONO_CREDITO_PREVIO',
       descripcion: 'Abono automático de saldo a favor disponible',
-      monto_usd: '-10.00',
+      monto_gtq: '-10.00',
     },
   ],
 };
@@ -57,7 +57,7 @@ describe('ReceiptBreakdownModal.vue', () => {
     expect(wrapper.text()).toContain('Apto 1-A');
     expect(wrapper.text()).toContain('33.3333%');
     expect(wrapper.findAll('.breakdown-modal__item')).toHaveLength(2);
-    expect(wrapper.find('#breakdown-saldo-pendiente').text()).toContain('$35.00 USD');
+    expect(wrapper.find('#breakdown-saldo-pendiente').text()).toContain('Q35.00');
 
     const dialogEl = dialog.element as HTMLDialogElement;
     vi.spyOn(dialogEl, 'getBoundingClientRect').mockReturnValue({

@@ -9,8 +9,8 @@ const store = useAccessAmenitiesStore();
 
 const areaNombre = ref('');
 const areaAforo = ref<number>(50);
-const areaCostoUsd = ref('25.00');
-const areaDepositoUsd = ref('100.00');
+const areaCostoGtq = ref('25.00');
+const areaDepositoGtq = ref('100.00');
 const areaRequiereSolvencia = ref(true);
 
 const reservaAreaId = ref<number>(1);
@@ -38,8 +38,8 @@ async function handleCrearArea(): Promise<void> {
     const creada = await store.crearAreaSocial({
       nombre: areaNombre.value.trim(),
       aforo_maximo: Number(areaAforo.value),
-      costo_uso_usd: areaCostoUsd.value.trim(),
-      deposito_garantia_usd: areaDepositoUsd.value.trim(),
+      costo_uso_gtq: areaCostoGtq.value.trim(),
+      deposito_garantia_gtq: areaDepositoGtq.value.trim(),
       requiere_solvencia_estricta: areaRequiereSolvencia.value,
     });
     reservaAreaId.value = creada.id;
@@ -118,7 +118,7 @@ async function handleCancelarReserva(reservaId: number): Promise<void> {
       role="region"
       aria-label="Candado de Solvencia Estricta"
     >
-      <strong>🔒 Candado de Solvencia Estricta ($0.00 USD):</strong>
+      <strong>🔒 Candado de Solvencia Estricta (Q0.00):</strong>
       <span>
         Para reservar áreas sociales de uso exclusivo, la unidad solicitante debe encontrarse
         totalmente solvente sin recibos vencidos ni saldos parciales pendientes. Al confirmarse la
@@ -162,8 +162,8 @@ async function handleCancelarReserva(reservaId: number): Promise<void> {
           </div>
           <p class="amenity-card__meta">
             Aforo máx.: <strong>{{ area.aforo_maximo }} personas</strong> · Uso:
-            <strong>${{ area.costo_uso_usd }} USD</strong> · Depósito en garantía:
-            <strong>${{ area.deposito_garantia_usd }} USD</strong>
+            <strong>Q{{ area.costo_uso_gtq }}</strong> · Depósito en garantía:
+            <strong>Q{{ area.deposito_garantia_gtq }}</strong>
           </p>
         </article>
       </div>
@@ -270,13 +270,13 @@ async function handleCancelarReserva(reservaId: number): Promise<void> {
 
         <div class="field-row">
           <label class="field" for="input-area-costo">
-            <span>Costo de Uso ($ USD)</span>
-            <input id="input-area-costo" v-model="areaCostoUsd" type="text" required />
+            <span>Costo de Uso (Q)</span>
+            <input id="input-area-costo" v-model="areaCostoGtq" type="text" required />
           </label>
 
           <label class="field" for="input-area-deposito">
-            <span>Depósito en Garantía ($ USD)</span>
-            <input id="input-area-deposito" v-model="areaDepositoUsd" type="text" required />
+            <span>Depósito en Garantía (Q)</span>
+            <input id="input-area-deposito" v-model="areaDepositoGtq" type="text" required />
           </label>
         </div>
 

@@ -26,7 +26,7 @@ from src.finanzas import (
     construir_mensaje_voto_consulta,
     construir_qr_token_solvencia,
     construir_token_pase_qr,
-    convertir_a_usd,
+    convertir_a_gtq,
     cuantizar,
     decodificar_y_verificar_token_pase_qr,
     determinar_estado_recibo,
@@ -63,48 +63,48 @@ def test_cuantizar_redondeo_half_up(entrada: Decimal, esperado: Decimal) -> None
     assert cuantizar(entrada) == esperado
 
 
-def test_convertir_usd_es_identidad() -> None:
-    assert convertir_a_usd(Decimal("100.00"), "USD", Decimal("36.5000")) == Decimal("100.00")
+def test_convertir_gtq_es_identidad() -> None:
+    assert convertir_a_gtq(Decimal("100.00"), "GTQ", Decimal("7.3000")) == Decimal("100.00")
 
 
-def test_convertir_usd_minusculas() -> None:
-    assert convertir_a_usd(Decimal("50.00"), "usd", Decimal("10.0000")) == Decimal("50.00")
+def test_convertir_gtq_minusculas() -> None:
+    assert convertir_a_gtq(Decimal("50.00"), "gtq", Decimal("10.0000")) == Decimal("50.00")
 
 
-def test_convertir_usd_no_exige_tasa_positiva() -> None:
-    assert convertir_a_usd(Decimal("10.00"), "USD", Decimal(0)) == Decimal("10.00")
+def test_convertir_gtq_no_exige_tasa_positiva() -> None:
+    assert convertir_a_gtq(Decimal("10.00"), "GTQ", Decimal(0)) == Decimal("10.00")
 
 
-def test_convertir_ves_a_usd() -> None:
-    assert convertir_a_usd(Decimal("3650.00"), "VES", Decimal("36.5000")) == Decimal("100.00")
+def test_convertir_usd_a_gtq() -> None:
+    assert convertir_a_gtq(Decimal("100.00"), "USD", Decimal("7.7000")) == Decimal("770.00")
 
 
-def test_convertir_ves_redondea_a_centavos() -> None:
-    assert convertir_a_usd(Decimal("100.00"), "VES", Decimal("36.5000")) == Decimal("2.74")
+def test_convertir_usd_redondea_a_centavos() -> None:
+    assert convertir_a_gtq(Decimal("12.34"), "USD", Decimal("7.6543")) == Decimal("94.45")
 
 
 def test_convertir_moneda_no_soportada_falla() -> None:
     with pytest.raises(ErrorFinanciero, match="Moneda no soportada"):
-        convertir_a_usd(Decimal("10.00"), "EUR", Decimal("36.5000"))
+        convertir_a_gtq(Decimal("10.00"), "EUR", Decimal("7.3000"))
 
 
-def test_convertir_ves_con_tasa_cero_falla() -> None:
+def test_convertir_usd_con_tasa_cero_falla() -> None:
     with pytest.raises(ErrorFinanciero, match="mayor que cero"):
-        convertir_a_usd(Decimal("10.00"), "VES", Decimal(0))
+        convertir_a_gtq(Decimal("10.00"), "USD", Decimal(0))
 
 
-def test_convertir_ves_con_tasa_negativa_falla() -> None:
+def test_convertir_usd_con_tasa_negativa_falla() -> None:
     with pytest.raises(ErrorFinanciero, match="mayor que cero"):
-        convertir_a_usd(Decimal("10.00"), "VES", Decimal(-5))
+        convertir_a_gtq(Decimal("10.00"), "USD", Decimal(-5))
 
 
-@pytest.mark.parametrize("metodo", ["ZELLE", "PAGO_MOVIL", "TRANSFERENCIA"])
+@pytest.mark.parametrize("metodo", ["TRANSFERENCIA", "DEPOSITO", "CHEQUE", "TARJETA"])
 def test_requiere_referencia_metodos_que_la_exigen(metodo: str) -> None:
     assert requiere_referencia(metodo) is True
 
 
 def test_requiere_referencia_es_case_insensitive() -> None:
-    assert requiere_referencia("zelle") is True
+    assert requiere_referencia("deposito") is True
 
 
 def test_requiere_referencia_efectivo_no_la_exige() -> None:
@@ -112,7 +112,7 @@ def test_requiere_referencia_efectivo_no_la_exige() -> None:
 
 
 def test_validar_referencia_con_referencia_ok() -> None:
-    validar_referencia("ZELLE", "REF-123")
+    validar_referencia("DEPOSITO", "REF-123")
 
 
 def test_validar_referencia_efectivo_sin_referencia_ok() -> None:
@@ -121,7 +121,7 @@ def test_validar_referencia_efectivo_sin_referencia_ok() -> None:
 
 def test_validar_referencia_ausente_falla() -> None:
     with pytest.raises(ErrorFinanciero, match="referencia es obligatorio"):
-        validar_referencia("PAGO_MOVIL", None)
+        validar_referencia("CHEQUE", None)
 
 
 def test_validar_referencia_solo_espacios_falla() -> None:
@@ -131,7 +131,7 @@ def test_validar_referencia_solo_espacios_falla() -> None:
 
 def test_validar_referencia_vacia_falla() -> None:
     with pytest.raises(ErrorFinanciero, match="referencia es obligatorio"):
-        validar_referencia("ZELLE", "")
+        validar_referencia("TARJETA", "")
 
 
 @pytest.mark.parametrize(
@@ -300,20 +300,20 @@ def test_fronteras_matematicas_finanzas_estrictas() -> None:
     assert ESTADO_PARCIAL == "PAGADO_PARCIAL"
     assert ESTADO_PAGADO == "PAGADO"
 
-    # USD ignora tasa <= 0 pero cuantiza; VES falla con tasa <= 0
-    assert convertir_a_usd(Decimal("25.555"), "USD", Decimal("0")) == Decimal("25.56")
+    # GTQ ignora tasa <= 0 pero cuantiza; USD falla con tasa <= 0
+    assert convertir_a_gtq(Decimal("25.555"), "GTQ", Decimal("0")) == Decimal("25.56")
     with pytest.raises(ErrorFinanciero, match="mayor que cero"):
-        convertir_a_usd(Decimal("100.00"), "VES", Decimal("0"))
+        convertir_a_gtq(Decimal("100.00"), "USD", Decimal("0"))
     with pytest.raises(ErrorFinanciero, match="mayor que cero"):
-        convertir_a_usd(Decimal("100.00"), "ves", Decimal("-36.50"))
-    assert convertir_a_usd(Decimal("365.00"), "ves", Decimal("36.50")) == Decimal("10.00")
+        convertir_a_gtq(Decimal("100.00"), "usd", Decimal("-36.50"))
+    assert convertir_a_gtq(Decimal("10.00"), "usd", Decimal("7.65")) == Decimal("76.50")
 
     # Referencias
     assert requiere_referencia("efectivo") is False
-    assert requiere_referencia("pago_movil") is True
+    assert requiere_referencia("deposito") is True
     validar_referencia("EFECTIVO", "  ref  ")
     validar_referencia("EFECTIVO", None)
-    validar_referencia("pago_movil", "  987654  ")
+    validar_referencia("deposito", "  987654  ")
     with pytest.raises(ErrorFinanciero, match="referencia es obligatorio"):
         validar_referencia("TRANSFERENCIA", "   ")
 

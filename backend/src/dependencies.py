@@ -86,10 +86,35 @@ def verificar_usuario_activo(usuario: Usuario) -> None:
         )
 
 
+ROL_ADMINISTRADOR = "ADMINISTRADOR"
+ROL_PRESIDENTE = "PRESIDENTE"
+ROLES_PRESIDENCIA: frozenset[str] = frozenset({ROL_PRESIDENTE, ROL_ADMINISTRADOR})
+
+
+def roles_efectivos(roles_permitidos: tuple[str, ...] | frozenset[str]) -> frozenset[str]:
+    """Expande la lista de roles: donde se autoriza al PRESIDENTE también se autoriza al ADMINISTRADOR.
+
+    El administrador designado por la mayoría de propietarios (Código Civil de Guatemala,
+    Arts. 547-549) opera el sistema con las facultades de la Presidencia y de Tesorería.
+    """
+    roles = frozenset(roles_permitidos)
+    if ROL_PRESIDENTE in roles:
+        return roles | {ROL_ADMINISTRADOR}
+    return roles
+
+
+def es_presidencia(usuario: Usuario) -> bool:
+    """Indica si el usuario tiene alcance global de Presidencia (PRESIDENTE o ADMINISTRADOR)."""
+    return getattr(usuario, "rol", "") in ROLES_PRESIDENCIA
+
+
 def verificar_roles(usuario: Usuario, roles_permitidos: tuple[str, ...]) -> None:
-    """Valida que el usuario esté activo y posea uno de los roles autorizados (RBAC)."""
+    """Valida que el usuario esté activo y posea uno de los roles autorizados (RBAC).
+
+    El ADMINISTRADOR hereda todos los permisos otorgados al PRESIDENTE.
+    """
     verificar_usuario_activo(usuario)
-    if getattr(usuario, "rol", "") not in roles_permitidos:
+    if getattr(usuario, "rol", "") not in roles_efectivos(roles_permitidos):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No tiene permisos para ejecutar esta acción.",

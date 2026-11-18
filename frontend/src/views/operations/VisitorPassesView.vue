@@ -132,14 +132,14 @@ async function handleRevocarPase(paseId: number): Promise<void> {
         </label>
 
         <label class="field" for="input-pase-cedula">
-          <span>Cédula / Documento</span>
+          <span>DPI / Pasaporte</span>
           <input
             id="input-pase-cedula"
             v-model="cedulaVisitante"
             type="text"
             minlength="5"
             maxlength="25"
-            placeholder="Ej. V-19888777"
+            placeholder="Ej. 2456 78901 0101"
             required
           />
         </label>

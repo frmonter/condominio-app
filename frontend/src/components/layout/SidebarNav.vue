@@ -4,7 +4,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { getActivePinia } from 'pinia';
-import { useAuthStore, type RolUsuario } from '../../stores/authStore';
+import { roleHasAccess, useAuthStore, type RolUsuario } from '../../stores/authStore';
 import { NAV_ICON_PATHS, type NavIconKey } from '../../utils/navIcons';
 import ThemeToggleButton from './ThemeToggleButton.vue';
 
@@ -185,7 +185,7 @@ const effectiveRole = computed<RolUsuario | null>(() => {
 });
 
 function canAccess(link: SidebarLinkItem, activeRole: RolUsuario | null): boolean {
-  return !link.roles || (activeRole !== null && link.roles.includes(activeRole));
+  return !link.roles || roleHasAccess(activeRole, link.roles);
 }
 
 const visibleSections = computed<SidebarSection[]>(() => {

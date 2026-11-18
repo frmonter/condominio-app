@@ -11,7 +11,13 @@ from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
-from src.dependencies import get_current_user, verificar_roles, verificar_usuario_activo
+from src.dependencies import (
+    es_presidencia,
+    get_current_user,
+    roles_efectivos,
+    verificar_roles,
+    verificar_usuario_activo,
+)
 from src.finanzas import (
     ErrorFinanciero,
     construir_token_pase_qr,
@@ -79,7 +85,7 @@ async def _verificar_acceso_unidad_anfitriona(
     unidad_id: int,
 ) -> Unidad:
     unidad = await _obtener_unidad_o_404(db, unidad_id)
-    if usuario.rol == "PRESIDENTE":
+    if es_presidencia(usuario):
         return unidad
     unidades_propias = await _unidades_activas_usuario(db, usuario.id)
     if unidad_id not in unidades_propias:
@@ -211,7 +217,7 @@ async def listar_mis_pases_visita(
     """Lista los pases de visita activos e históricos filtrados directamente en SQL con JOIN Unidad."""
     verificar_usuario_activo(usuario)
     stmt = select(PaseVisita, Unidad.identificador).join(Unidad, Unidad.id == PaseVisita.unidad_id)
-    if usuario.rol != "PRESIDENTE":
+    if not es_presidencia(usuario):
         unidades_propias = await _unidades_activas_usuario(db, usuario.id)
         if unidades_propias:
             stmt = stmt.where(
@@ -249,7 +255,7 @@ async def revocar_pase_visita(
     if not pase:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pase de visita no encontrado.")
 
-    if pase.creado_por_id != usuario.id and usuario.rol != "PRESIDENTE":
+    if pase.creado_por_id != usuario.id and not es_presidencia(usuario):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Solo el residente que emitió el pase o el Presidente pueden revocarlo.",
@@ -474,7 +480,7 @@ async def listar_paqueteria(
     """Lista paquetes pendientes en garita e historial de entregas filtrados en SQL con JOIN Unidad."""
     verificar_usuario_activo(usuario)
     stmt = select(PaqueteRecibido, Unidad.identificador).join(Unidad, Unidad.id == PaqueteRecibido.unidad_id)
-    if usuario.rol not in _ROLES_JUNTA_Y_GARITA:
+    if usuario.rol not in roles_efectivos(_ROLES_JUNTA_Y_GARITA):
         unidades_propias = await _unidades_activas_usuario(db, usuario.id)
         if not unidades_propias:
             return []
@@ -505,7 +511,7 @@ async def confirmar_entrega_paquete(
     if not paquete:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Paquete no encontrado.")
 
-    if usuario.rol not in _ROLES_PAQUETERIA:
+    if usuario.rol not in roles_efectivos(_ROLES_PAQUETERIA):
         unidades_propias = await _unidades_activas_usuario(db, usuario.id)
         if paquete.unidad_id not in unidades_propias:
             raise HTTPException(

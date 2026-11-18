@@ -6,7 +6,12 @@ import {
   type Router,
   type RouteRecordRaw,
 } from 'vue-router';
-import { registerAuthRouter, useAuthStore, type RolUsuario } from '../stores/authStore';
+import {
+  registerAuthRouter,
+  roleHasAccess,
+  useAuthStore,
+  type RolUsuario,
+} from '../stores/authStore';
 import {
   getActiveConsultationTransition,
   setActiveConsultationTransition,
@@ -223,7 +228,7 @@ export function evaluateNavigationGuard(
   if (auth.isGhostUser) {
     return '/espera-aprobacion';
   }
-  if (allowedRoles && (!auth.userRole || !allowedRoles.includes(auth.userRole))) {
+  if (allowedRoles && !roleHasAccess(auth.userRole, allowedRoles)) {
     return '/dashboard';
   }
   return true;
@@ -254,7 +259,7 @@ export function buildAppRouter(useMemory = false): Router {
     if (
       decision === '/dashboard' &&
       Array.isArray(allowedRoles) &&
-      (!authStore.userRole || !allowedRoles.includes(authStore.userRole))
+      !roleHasAccess(authStore.userRole, allowedRoles)
     ) {
       authStore.setRbacNotice('No posee permisos para acceder a la sección solicitada.');
     }

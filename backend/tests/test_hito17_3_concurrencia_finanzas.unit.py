@@ -75,11 +75,11 @@ async def _crear_motor_y_datos(tmp_path: Path) -> tuple[AsyncEngine, async_sessi
                 es_activo=True,
             )
         )
-        s.add(TasaCambio(fecha=date.today(), tasa_usd_ves=Decimal("40.0000")))
+        s.add(TasaCambio(fecha=date.today(), tasa_usd_gtq=Decimal("40.0000")))
         s.add_all(
             [
-                Recibo(unidad_id=u1.id, periodo="2026-10", monto_usd=Decimal("100.00")),
-                Recibo(unidad_id=u2.id, periodo="2026-10", monto_usd=Decimal("80.00")),
+                Recibo(unidad_id=u1.id, periodo="2026-10", monto_gtq=Decimal("100.00")),
+                Recibo(unidad_id=u2.id, periodo="2026-10", monto_gtq=Decimal("80.00")),
             ]
         )
         await s.commit()
@@ -111,14 +111,14 @@ async def test_ddl_unicidad_recibo_e_indice_parcial_pagos(tmp_path: Path) -> Non
         s.add_all([u1, usr])
         await s.flush()
 
-        r1 = Recibo(unidad_id=u1.id, periodo="2026-10", monto_usd=Decimal("50.00"))
+        r1 = Recibo(unidad_id=u1.id, periodo="2026-10", monto_gtq=Decimal("50.00"))
         s.add(r1)
         await s.commit()
         r1_id = r1.id
         usr_id = usr.id
 
         # Segundo recibo misma (unidad_id, periodo) debe violar uq_recibo_unidad_periodo
-        s.add(Recibo(unidad_id=u1.id, periodo="2026-10", monto_usd=Decimal("75.00")))
+        s.add(Recibo(unidad_id=u1.id, periodo="2026-10", monto_gtq=Decimal("75.00")))
         with pytest.raises(IntegrityError):
             await s.commit()
         await s.rollback()
@@ -128,11 +128,11 @@ async def test_ddl_unicidad_recibo_e_indice_parcial_pagos(tmp_path: Path) -> Non
             recibo_id=r1_id,
             usuario_id=usr_id,
             monto=Decimal("50.00"),
-            moneda="USD",
-            monto_usd=Decimal("50.00"),
+            moneda="GTQ",
+            monto_gtq=Decimal("50.00"),
             tasa_cambio=Decimal("40.0000"),
-            metodo_pago="ZELLE",
-            numero_referencia="ZELLE-REF-1",
+            metodo_pago="TRANSFERENCIA",
+            numero_referencia="TRF-REF-1",
             estado="EN_REVISION",
         )
         s.add(p1)
@@ -144,11 +144,11 @@ async def test_ddl_unicidad_recibo_e_indice_parcial_pagos(tmp_path: Path) -> Non
                 recibo_id=r1_id,
                 usuario_id=usr_id,
                 monto=Decimal("50.00"),
-                moneda="USD",
-                monto_usd=Decimal("50.00"),
+                moneda="GTQ",
+                monto_gtq=Decimal("50.00"),
                 tasa_cambio=Decimal("40.0000"),
-                metodo_pago="ZELLE",
-                numero_referencia="ZELLE-REF-1",
+                metodo_pago="TRANSFERENCIA",
+                numero_referencia="TRF-REF-1",
                 estado="EN_REVISION",
             )
         )
@@ -167,11 +167,11 @@ async def test_ddl_unicidad_recibo_e_indice_parcial_pagos(tmp_path: Path) -> Non
                 recibo_id=r1_id,
                 usuario_id=usr_id,
                 monto=Decimal("50.00"),
-                moneda="USD",
-                monto_usd=Decimal("50.00"),
+                moneda="GTQ",
+                monto_gtq=Decimal("50.00"),
                 tasa_cambio=Decimal("40.0000"),
-                metodo_pago="ZELLE",
-                numero_referencia="ZELLE-REF-1",
+                metodo_pago="TRANSFERENCIA",
+                numero_referencia="TRF-REF-1",
                 estado="EN_REVISION",
             )
         )
@@ -182,8 +182,8 @@ async def test_ddl_unicidad_recibo_e_indice_parcial_pagos(tmp_path: Path) -> Non
                     recibo_id=r1_id,
                     usuario_id=usr_id,
                     monto=Decimal("10.00"),
-                    moneda="USD",
-                    monto_usd=Decimal("10.00"),
+                    moneda="GTQ",
+                    monto_gtq=Decimal("10.00"),
                     tasa_cambio=Decimal("40.0000"),
                     metodo_pago="EFECTIVO",
                     numero_referencia=None,
@@ -193,8 +193,8 @@ async def test_ddl_unicidad_recibo_e_indice_parcial_pagos(tmp_path: Path) -> Non
                     recibo_id=r1_id,
                     usuario_id=usr_id,
                     monto=Decimal("15.00"),
-                    moneda="USD",
-                    monto_usd=Decimal("15.00"),
+                    moneda="GTQ",
+                    monto_gtq=Decimal("15.00"),
                     tasa_cambio=Decimal("40.0000"),
                     metodo_pago="EFECTIVO",
                     numero_referencia=None,
@@ -238,22 +238,22 @@ async def test_flujo_real_anti_idor_sobrepago_y_candado_contable_egresos(
             json={
                 "recibo_id": r_u2.id,
                 "monto": "80.00",
-                "moneda": "USD",
-                "metodo_pago": "ZELLE",
+                "moneda": "GTQ",
+                "metodo_pago": "TRANSFERENCIA",
                 "numero_referencia": "REF-IDOR-01",
             },
             headers={"Idempotency-Key": "17300000-0000-4000-8000-000000000001"},
         )
         assert res_idor.status_code == 403
 
-        # 2. Vecino1 reporta sobrepago de $130 sobre su propio recibo de $100 -> 201
+        # 2. Vecino1 reporta sobrepago de Q130 sobre su propio recibo de Q100 -> 201
         res_pago = client.post(
             "/api/pagos/reportar",
             json={
                 "recibo_id": r_u1.id,
                 "monto": "130.00",
-                "moneda": "USD",
-                "metodo_pago": "ZELLE",
+                "moneda": "GTQ",
+                "metodo_pago": "TRANSFERENCIA",
                 "numero_referencia": "  REF-REAL-001  ",
             },
             headers={"Idempotency-Key": "17300000-0000-4000-8000-000000000002"},
@@ -262,7 +262,7 @@ async def test_flujo_real_anti_idor_sobrepago_y_candado_contable_egresos(
         pago_id = res_pago.json()["id"]
         assert res_pago.json()["numero_referencia"] == "REF-REAL-001"
 
-        # 3. Tesorero aprueba pago atómicamente acreditando $30 a Unidad 1
+        # 3. Tesorero aprueba pago atómicamente acreditando Q30 a Unidad 1
         app.dependency_overrides[get_current_user] = lambda: tesorero
         res_aprob = client.put(
             f"/api/pagos/{pago_id}/aprobar",
@@ -275,8 +275,8 @@ async def test_flujo_real_anti_idor_sobrepago_y_candado_contable_egresos(
             u1_db = (await s.execute(select(Unidad).where(Unidad.identificador == "A-01"))).scalars().one()
             r1_db = (await s.execute(select(Recibo).where(Recibo.id == r_u1.id))).scalars().one()
             assert r1_db.estado == "PAGADO"
-            assert r1_db.monto_pagado_usd == Decimal("100.00")
-            assert u1_db.credito_disponible_usd == Decimal("30.00")
+            assert r1_db.monto_pagado_gtq == Decimal("100.00")
+            assert u1_db.credito_disponible_gtq == Decimal("30.00")
 
         # 4. Cierre mensual bloquea nuevos egresos en el mismo periodo (409 Conflict)
         res_cierre = client.post("/api/finanzas/cierre-mensual", json={"periodo": "2026-10"})
@@ -289,7 +289,7 @@ async def test_flujo_real_anti_idor_sobrepago_y_candado_contable_egresos(
                 "categoria": "MANTENIMIENTO",
                 "descripcion": "Intento tras cierre",
                 "monto": "20.00",
-                "moneda": "USD",
+                "moneda": "GTQ",
             },
             headers={"Idempotency-Key": "17300000-0000-4000-8000-000000000004"},
         )

@@ -36,7 +36,7 @@ interface PagoState {
   monto: string;
   moneda: string;
   tasa_cambio: string;
-  monto_usd: string;
+  monto_gtq: string;
   metodo_pago: string;
   numero_referencia: string | null;
   estado: string;
@@ -73,23 +73,23 @@ export interface CondominioMockState {
   currentUser: MockUserProfile | null;
   closingActive: boolean;
   strictSolvencyBlock: boolean;
-  tasaUsdVes: string;
+  tasaUsdGtq: string;
   capturedIdempotencyKeys: string[];
   unidades: Array<{
     id: number;
     identificador: string;
     estructura_id: number;
     alicuota: string;
-    cuota_fija_usd: string | null;
+    cuota_fija_gtq: string | null;
   }>;
   recibos: Array<{
     recibo_id: number;
     unidad_id: number;
     identificador_unidad: string;
     periodo: string;
-    monto_usd: string;
+    monto_gtq: string;
     estado: string;
-    saldo_usd: string;
+    saldo_gtq: string;
   }>;
   pagos: PagoState[];
   fondos: Array<{
@@ -97,7 +97,7 @@ export interface CondominioMockState {
     nombre: string;
     tipo: string;
     porcentaje_recargo: string;
-    saldo_actual_usd: string;
+    saldo_actual_gtq: string;
   }>;
   usuariosPendientes: MockUserProfile[];
   incidencias: Array<{
@@ -165,8 +165,8 @@ export interface CondominioMockState {
     id: number;
     nombre: string;
     aforo_maximo: number;
-    costo_uso_usd: string;
-    deposito_garantia_usd: string;
+    costo_uso_gtq: string;
+    deposito_garantia_gtq: string;
     requiere_solvencia_estricta: boolean;
   }>;
   reservas: ReservaState[];
@@ -276,7 +276,7 @@ function createInitialState(options: CondominioMockOptions): CondominioMockState
     currentUser: initialUser,
     closingActive: Boolean(options.closingActive),
     strictSolvencyBlock: Boolean(options.strictSolvencyBlock),
-    tasaUsdVes: '45.50',
+    tasaUsdGtq: '7.70',
     capturedIdempotencyKeys: [],
     unidades: [
       {
@@ -284,14 +284,14 @@ function createInitialState(options: CondominioMockOptions): CondominioMockState
         identificador: 'A-101',
         estructura_id: 1,
         alicuota: '10.0000',
-        cuota_fija_usd: null,
+        cuota_fija_gtq: null,
       },
       {
         id: 2,
         identificador: 'A-102',
         estructura_id: 1,
         alicuota: '10.0000',
-        cuota_fija_usd: null,
+        cuota_fija_gtq: null,
       },
     ],
     recibos: [
@@ -300,20 +300,20 @@ function createInitialState(options: CondominioMockOptions): CondominioMockState
         unidad_id: 1,
         identificador_unidad: 'A-101',
         periodo: '2026-10',
-        monto_usd: '50.00',
+        monto_gtq: '50.00',
         estado: 'PENDIENTE',
-        saldo_usd: '50.00',
+        saldo_gtq: '50.00',
       },
     ],
     pagos: [
       {
         id: 1,
         recibo_id: 1,
-        monto: '1825.00',
-        moneda: 'VES',
+        monto: '500.00',
+        moneda: 'USD',
         tasa_cambio: '45.50',
-        monto_usd: '40.11',
-        metodo_pago: 'PAGO_MOVIL',
+        monto_gtq: '40.11',
+        metodo_pago: 'DEPOSITO',
         numero_referencia: '99881122',
         estado: 'EN_REVISION',
       },
@@ -324,7 +324,7 @@ function createInitialState(options: CondominioMockOptions): CondominioMockState
         nombre: 'Fondo de Reserva Legal',
         tipo: 'RESERVA_LEGAL',
         porcentaje_recargo: '10.00',
-        saldo_actual_usd: '1250.00',
+        saldo_actual_gtq: '1250.00',
       },
     ],
     usuariosPendientes: [{ ...PROFILES.FANTASMA, id: 501, nombre: 'Marcos Pendiente' }],
@@ -430,8 +430,8 @@ function createInitialState(options: CondominioMockOptions): CondominioMockState
         id: 1,
         nombre: 'Salon de Fiestas Principal',
         aforo_maximo: 60,
-        costo_uso_usd: '25.00',
-        deposito_garantia_usd: '100.00',
+        costo_uso_gtq: '25.00',
+        deposito_garantia_gtq: '100.00',
         requiere_solvencia_estricta: true,
       },
     ],
@@ -519,22 +519,22 @@ function handleFinanceCore(
   state: CondominioMockState,
 ): HttpMockResponse | null {
   if (path === '/api/finanzas/tasa' && method === 'GET') {
-    return jsonResp(200, { id: 1, fecha: '2026-10-30', tasa_usd_ves: state.tasaUsdVes });
+    return jsonResp(200, { id: 1, fecha: '2026-10-30', tasa_usd_gtq: state.tasaUsdGtq });
   }
   if (path === '/api/finanzas/tasa' && method === 'POST') {
-    state.tasaUsdVes = String(body.tasa_usd_ves ?? state.tasaUsdVes);
-    return jsonResp(201, { id: 2, fecha: '2026-10-30', tasa_usd_ves: state.tasaUsdVes });
+    state.tasaUsdGtq = String(body.tasa_usd_gtq ?? state.tasaUsdGtq);
+    return jsonResp(201, { id: 2, fecha: '2026-10-30', tasa_usd_gtq: state.tasaUsdGtq });
   }
   if (path === '/api/finanzas/resumen' && method === 'GET') {
     return jsonResp(200, {
-      deuda_total_usd: state.recibos[0]?.saldo_usd ?? '0.00',
-      total_egresos_usd: '450.00',
+      deuda_total_gtq: state.recibos[0]?.saldo_gtq ?? '0.00',
+      total_egresos_gtq: '450.00',
       gastos_por_categoria: { 'Bombas de Agua': '250.00', Vigilancia: '200.00' },
       estado_cobranza: state.recibos,
     });
   }
   if (path === '/api/finanzas/egresos' && method === 'POST') {
-    return jsonResp(201, { id: ++state.nextId, monto_usd: String(body.monto ?? '50.00') });
+    return jsonResp(201, { id: ++state.nextId, monto_gtq: String(body.monto ?? '50.00') });
   }
   if (path === '/api/finanzas/cierre-mensual' && method === 'POST') {
     state.closingActive = true;
@@ -555,10 +555,10 @@ function resolveUpdatedPago(pagoId: number, action: string, state: CondominioMoc
     id: pagoId,
     recibo_id: 1,
     monto: '50.00',
-    moneda: 'USD',
-    tasa_cambio: state.tasaUsdVes,
-    monto_usd: '50.00',
-    metodo_pago: 'PAGO_MOVIL',
+    moneda: 'GTQ',
+    tasa_cambio: state.tasaUsdGtq,
+    monto_gtq: '50.00',
+    metodo_pago: 'DEPOSITO',
     numero_referencia: '123456',
     estado: 'EN_REVISION',
   };
@@ -573,15 +573,15 @@ function reportPayment(
     return jsonResp(409, { detail: 'Periodo contable bloqueado por Candado Contable.' });
   }
   const monto = String(body.monto ?? '50.00');
-  const moneda = String(body.moneda ?? 'USD');
+  const moneda = String(body.moneda ?? 'GTQ');
   const pago: PagoState = {
     id: ++state.nextId,
     recibo_id: Number(body.recibo_id ?? 1),
     monto,
     moneda,
-    tasa_cambio: state.tasaUsdVes,
-    monto_usd: moneda === 'USD' ? monto : '40.00',
-    metodo_pago: String(body.metodo_pago ?? 'PAGO_MOVIL'),
+    tasa_cambio: state.tasaUsdGtq,
+    monto_gtq: moneda === 'GTQ' ? monto : '40.00',
+    metodo_pago: String(body.metodo_pago ?? 'DEPOSITO'),
     numero_referencia: (body.numero_referencia as string | null) ?? null,
     estado: 'EN_REVISION',
   };
@@ -597,7 +597,7 @@ function mutatePaymentStatus(
   const updated = resolveUpdatedPago(pagoId, action, state);
   if (action === 'aprobar' && state.recibos[0]) {
     state.recibos[0].estado = 'PAGADO';
-    state.recibos[0].saldo_usd = '0.00';
+    state.recibos[0].saldo_gtq = '0.00';
   }
   return jsonResp(200, updated);
 }
@@ -636,7 +636,7 @@ function handleFondosRoute(
       nombre: String(body.nombre ?? 'Fondo Especial'),
       tipo: String(body.tipo ?? 'PROVISION_ESPECIAL'),
       porcentaje_recargo: String(body.porcentaje_recargo ?? '5.00'),
-      saldo_actual_usd: '0.00',
+      saldo_actual_gtq: '0.00',
     };
     state.fondos.push(created);
     return jsonResp(201, created);
@@ -655,7 +655,7 @@ function handleBillingAndSolvency(
       periodo: String(body.periodo ?? '2026-10'),
       modalidad: String(body.modalidad ?? 'ALICUOTA'),
       recibos_emitidos: state.unidades.length,
-      total_facturado_neto_usd: '100.00',
+      total_facturado_neto_gtq: '100.00',
     });
   }
   const desgloseMatch = /^\/api\/finanzas\/recibos\/(\d+)\/desglose$/.exec(path);
@@ -666,21 +666,21 @@ function handleBillingAndSolvency(
       periodo: '2026-10',
       alicuota_aplicada: '10.0000',
       estado: 'PENDIENTE',
-      monto_usd: '50.00',
-      credito_descontado_usd: '5.00',
-      saldo_pendiente_usd: '45.00',
+      monto_gtq: '50.00',
+      credito_descontado_gtq: '5.00',
+      saldo_pendiente_gtq: '45.00',
       items: [
         {
           id: 1,
           tipo_item: 'GASTO_COMUN',
           descripcion: 'Mantenimiento Bombas',
-          monto_usd: '55.00',
+          monto_gtq: '55.00',
         },
         {
           id: 2,
           tipo_item: 'ABONO_CREDITO_PREVIO',
           descripcion: 'Saldo previo',
-          monto_usd: '-5.00',
+          monto_gtq: '-5.00',
         },
       ],
     });
@@ -692,7 +692,7 @@ function handleBillingAndSolvency(
       folio: `SOLV-202610-000${uid}-ABCD`,
       unidad_id: uid,
       identificador_unidad: 'A-101',
-      deuda_verificada_usd: '0.00',
+      deuda_verificada_gtq: '0.00',
       fecha_emision: '2026-10-30',
       fecha_vencimiento: '2026-11-30',
       firma_hmac: 'hmac_sha256_solvencia_e2e_sig_001122',
@@ -723,7 +723,7 @@ function generateStructureUnits(
     identificador,
     estructura_id: 2,
     alicuota: '10.0000',
-    cuota_fija_usd: null,
+    cuota_fija_gtq: null,
   }));
   state.unidades.push(...createdUnits);
   return jsonResp(201, {
@@ -1082,8 +1082,8 @@ function handleAmenitiesRoute(
       id: ++state.nextId,
       nombre: String(body.nombre ?? 'Parrillera Norte'),
       aforo_maximo: Number(body.aforo_maximo ?? 30),
-      costo_uso_usd: String(body.costo_uso_usd ?? '25.00'),
-      deposito_garantia_usd: String(body.deposito_garantia_usd ?? '100.00'),
+      costo_uso_gtq: String(body.costo_uso_gtq ?? '25.00'),
+      deposito_garantia_gtq: String(body.deposito_garantia_gtq ?? '100.00'),
       requiere_solvencia_estricta: Boolean(body.requiere_solvencia_estricta ?? true),
     };
     state.areasSociales.push(area);
@@ -1098,7 +1098,7 @@ function requestReservation(
 ): HttpMockResponse {
   if (state.strictSolvencyBlock) {
     return jsonResp(403, {
-      detail: 'Reserva bloqueada: la unidad debe estar solvente ($0.00 USD) para esta area.',
+      detail: 'Reserva bloqueada: la unidad debe estar solvente (Q0.00) para esta area.',
     });
   }
   const area =

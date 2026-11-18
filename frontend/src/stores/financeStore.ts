@@ -4,8 +4,8 @@ import { apiClient, ApiError } from '../services/apiClient';
 import { generateIdempotencyKey } from '../utils/security';
 import { useAuthStore } from './authStore';
 
-export type MonedaPago = 'USD' | 'VES';
-export type MetodoPago = 'PAGO_MOVIL' | 'TRANSFERENCIA' | 'ZELLE' | 'EFECTIVO';
+export type MonedaPago = 'GTQ' | 'USD';
+export type MetodoPago = 'TRANSFERENCIA' | 'DEPOSITO' | 'CHEQUE' | 'TARJETA' | 'EFECTIVO';
 export type EstadoPago = 'EN_REVISION' | 'APROBADO' | 'RECHAZADO';
 export type EstadoRecibo =
   'PENDIENTE' | 'ABONO_PARCIAL' | 'SOLVENTE' | 'MOROSO' | 'PAGADO' | 'PAGADO_PARCIAL';
@@ -15,21 +15,21 @@ export type TipoFondoCondominio = 'RESERVA_LEGAL' | 'CAJA_CHICA' | 'ESPECIAL';
 export interface TasaCambioDTO {
   id: number;
   fecha: string;
-  tasa_usd_ves: string;
+  tasa_usd_gtq: string;
 }
 
 export interface EstadoCobranzaItemDTO {
   recibo_id?: number;
   unidad_id: number;
   periodo: string;
-  monto_usd?: string;
+  monto_gtq?: string;
   estado: EstadoRecibo;
-  saldo_usd: string;
+  saldo_gtq: string;
 }
 
 export interface ResumenFinancieroDTO {
-  deuda_total_usd: string;
-  total_egresos_usd: string;
+  deuda_total_gtq: string;
+  total_egresos_gtq: string;
   gastos_por_categoria: Record<string, string>;
   estado_cobranza: EstadoCobranzaItemDTO[];
 }
@@ -40,7 +40,7 @@ export interface PagoDTO {
   usuario_id: number;
   monto: string;
   moneda: MonedaPago;
-  monto_usd: string;
+  monto_gtq: string;
   tasa_cambio: string;
   metodo_pago: MetodoPago;
   numero_referencia: string | null;
@@ -83,7 +83,7 @@ export interface FondoCondominioDTO {
   nombre: string;
   tipo: TipoFondoCondominio;
   porcentaje_recargo: string;
-  saldo_actual_usd: string;
+  saldo_actual_gtq: string;
   es_activo: boolean;
 }
 
@@ -96,9 +96,9 @@ export interface FondoCondominioCreateDTO {
 export interface FacturarPeriodoRequestDTO {
   periodo: string;
   modalidad: ModalidadFacturacion;
-  monto_cuota_fija_usd?: string | null;
+  monto_cuota_fija_gtq?: string | null;
   incluir_fondo_reserva?: boolean;
-  cuota_extraordinaria_total_usd?: string;
+  cuota_extraordinaria_total_gtq?: string;
   descripcion_cuota_extraordinaria?: string | null;
 }
 
@@ -106,13 +106,13 @@ export interface FacturarPeriodoResponseDTO {
   periodo: string;
   modalidad: ModalidadFacturacion;
   recibos_emitidos: number;
-  total_egresos_comunes_usd: string;
-  recargo_fondo_reserva_usd: string;
-  cuota_extraordinaria_total_usd: string;
-  total_facturado_bruto_usd: string;
-  total_credito_descontado_usd: string;
-  total_facturado_neto_usd: string;
-  superavit_conciliado_fondo_usd: string;
+  total_egresos_comunes_gtq: string;
+  recargo_fondo_reserva_gtq: string;
+  cuota_extraordinaria_total_gtq: string;
+  total_facturado_bruto_gtq: string;
+  total_credito_descontado_gtq: string;
+  total_facturado_neto_gtq: string;
+  superavit_conciliado_fondo_gtq: string;
 }
 
 export interface ReciboItemDTO {
@@ -120,7 +120,7 @@ export interface ReciboItemDTO {
   recibo_id: number;
   tipo_item: string;
   descripcion: string;
-  monto_usd: string;
+  monto_gtq: string;
 }
 
 export interface ReciboDesgloseDTO {
@@ -129,10 +129,10 @@ export interface ReciboDesgloseDTO {
   identificador_unidad: string;
   alicuota_aplicada: string;
   periodo: string;
-  monto_usd: string;
-  monto_pagado_usd: string;
-  saldo_pendiente_usd: string;
-  credito_descontado_usd: string;
+  monto_gtq: string;
+  monto_pagado_gtq: string;
+  saldo_pendiente_gtq: string;
+  credito_descontado_gtq: string;
   estado: string;
   bloqueado: boolean;
   items: ReciboItemDTO[];
@@ -146,7 +146,7 @@ export interface CertificadoSolvenciaDTO {
   emitido_por_id: number;
   fecha_emision: string;
   fecha_vencimiento: string;
-  deuda_verificada_usd: string;
+  deuda_verificada_gtq: string;
   firma_hmac: string;
   qr_token: string;
 }
@@ -158,7 +158,7 @@ export interface VerificarSolvenciaDTO {
   identificador_unidad: string;
   fecha_vencimiento: string;
   vigente: boolean;
-  deuda_verificada_usd: string;
+  deuda_verificada_gtq: string;
   firma_hmac: string;
 }
 
@@ -175,32 +175,32 @@ export interface FinanceStateData {
   verificacionSolvencia: VerificarSolvenciaDTO | null;
 }
 
-export function convertUsdToVes(usdAmount: string | number, rateUsdVes: string | number): string {
+export function convertGtqToUsd(gtqAmount: string | number, rateUsdGtq: string | number): string {
+  const gtq = typeof gtqAmount === 'number' ? gtqAmount : Number.parseFloat(gtqAmount);
+  const rate = typeof rateUsdGtq === 'number' ? rateUsdGtq : Number.parseFloat(rateUsdGtq);
+  if (!Number.isFinite(gtq) || !Number.isFinite(rate) || gtq < 0 || rate <= 0) {
+    return '0.00';
+  }
+  return (gtq / rate).toFixed(2);
+}
+
+export function convertUsdToGtq(usdAmount: string | number, rateUsdGtq: string | number): string {
   const usd = typeof usdAmount === 'number' ? usdAmount : Number.parseFloat(usdAmount);
-  const rate = typeof rateUsdVes === 'number' ? rateUsdVes : Number.parseFloat(rateUsdVes);
-  if (!Number.isFinite(usd) || !Number.isFinite(rate) || rate <= 0) {
+  const rate = typeof rateUsdGtq === 'number' ? rateUsdGtq : Number.parseFloat(rateUsdGtq);
+  if (!Number.isFinite(usd) || !Number.isFinite(rate) || usd < 0 || rate <= 0) {
     return '0.00';
   }
   return (usd * rate).toFixed(2);
 }
 
-export function convertVesToUsd(vesAmount: string | number, rateUsdVes: string | number): string {
-  const ves = typeof vesAmount === 'number' ? vesAmount : Number.parseFloat(vesAmount);
-  const rate = typeof rateUsdVes === 'number' ? rateUsdVes : Number.parseFloat(rateUsdVes);
-  if (!Number.isFinite(ves) || !Number.isFinite(rate) || rate <= 0) {
-    return '0.00';
-  }
-  return (ves / rate).toFixed(2);
-}
-
 export function determinePaymentCoverage(
-  montoAbonoUsd: number,
-  saldoPendienteUsd: number,
+  montoAbonoGtq: number,
+  saldoPendienteGtq: number,
 ): 'PAGO_TOTAL' | 'ABONO_PARCIAL' {
-  if (montoAbonoUsd <= 0 || saldoPendienteUsd <= 0) {
+  if (montoAbonoGtq <= 0 || saldoPendienteGtq <= 0) {
     return 'ABONO_PARCIAL';
   }
-  return montoAbonoUsd + 0.0001 >= saldoPendienteUsd ? 'PAGO_TOTAL' : 'ABONO_PARCIAL';
+  return montoAbonoGtq + 0.0001 >= saldoPendienteGtq ? 'PAGO_TOTAL' : 'ABONO_PARCIAL';
 }
 
 export const useFinanceStore = defineStore('finance', () => {
@@ -208,11 +208,11 @@ export const useFinanceStore = defineStore('finance', () => {
     tasaActiva: {
       id: 1,
       fecha: '2026-10-29',
-      tasa_usd_ves: '36.50',
+      tasa_usd_gtq: '7.70',
     },
     resumen: {
-      deuda_total_usd: '0.00',
-      total_egresos_usd: '0.00',
+      deuda_total_gtq: '0.00',
+      total_egresos_gtq: '0.00',
       gastos_por_categoria: {},
       estado_cobranza: [],
     },
@@ -231,7 +231,7 @@ export const useFinanceStore = defineStore('finance', () => {
   const errorMessage = ref<string | null>(null);
   const lastUpdatedAt = ref<number | null>(null);
 
-  const activeRateValue = computed(() => data.value.tasaActiva?.tasa_usd_ves ?? '36.50');
+  const activeRateValue = computed(() => data.value.tasaActiva?.tasa_usd_gtq ?? '7.70');
   const isPeriodClosed = computed(() => data.value.ultimoCierre?.estado === 'CERRADO');
 
   async function handleStoreError(
@@ -300,11 +300,11 @@ export const useFinanceStore = defineStore('finance', () => {
     }
   }
 
-  async function registrarTasa(tasaUsdVes: string, fecha?: string): Promise<TasaCambioDTO> {
+  async function registrarTasa(tasaUsdGtq: string, fecha?: string): Promise<TasaCambioDTO> {
     isLoading.value = true;
     errorMessage.value = null;
     try {
-      const payload = fecha ? { tasa_usd_ves: tasaUsdVes, fecha } : { tasa_usd_ves: tasaUsdVes };
+      const payload = fecha ? { tasa_usd_gtq: tasaUsdGtq, fecha } : { tasa_usd_gtq: tasaUsdGtq };
       const nuevaTasa = await apiClient.post<TasaCambioDTO>('/api/finanzas/tasa', payload);
       data.value = {
         ...data.value,
@@ -314,7 +314,7 @@ export const useFinanceStore = defineStore('finance', () => {
       lastUpdatedAt.value = Date.now();
       return nuevaTasa;
     } catch (error) {
-      await handleStoreError(error, 'No se pudo registrar la tasa BCV del día.');
+      await handleStoreError(error, 'No se pudo registrar la tasa de cambio del día.');
       throw error;
     } finally {
       isLoading.value = false;
@@ -324,11 +324,11 @@ export const useFinanceStore = defineStore('finance', () => {
   async function registrarEgreso(
     payload: EgresoCreateDTO,
     idempotencyKey: string = generateIdempotencyKey(),
-  ): Promise<{ id: number; monto_usd: string }> {
+  ): Promise<{ id: number; monto_gtq: string }> {
     isLoading.value = true;
     errorMessage.value = null;
     try {
-      const result = await apiClient.post<{ id: number; monto_usd: string }>(
+      const result = await apiClient.post<{ id: number; monto_gtq: string }>(
         '/api/finanzas/egresos',
         payload,
         { idempotencyKey },

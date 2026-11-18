@@ -118,25 +118,23 @@ function handleBackdropClick(event: MouseEvent): void {
             <span class="breakdown-modal__item-type">{{ item.tipo_item }}</span>
             <span class="breakdown-modal__item-desc">{{ item.descripcion }}</span>
           </div>
-          <strong class="breakdown-modal__item-amount tabular-num">
-            ${{ item.monto_usd }} USD
-          </strong>
+          <strong class="breakdown-modal__item-amount tabular-num"> Q{{ item.monto_gtq }} </strong>
         </li>
       </ul>
 
       <footer class="breakdown-modal__summary">
         <div class="breakdown-modal__row">
           <span>Total Recibo:</span>
-          <strong class="tabular-num">${{ desglose.monto_usd }} USD</strong>
+          <strong class="tabular-num">Q{{ desglose.monto_gtq }}</strong>
         </div>
         <div class="breakdown-modal__row">
           <span>Crédito Descontado:</span>
-          <strong class="tabular-num">-${{ desglose.credito_descontado_usd }} USD</strong>
+          <strong class="tabular-num">-Q{{ desglose.credito_descontado_gtq }}</strong>
         </div>
         <div class="breakdown-modal__row">
           <span>Saldo Pendiente:</span>
           <strong id="breakdown-saldo-pendiente" class="tabular-num">
-            ${{ desglose.saldo_pendiente_usd }} USD
+            Q{{ desglose.saldo_pendiente_gtq }}
           </strong>
         </div>
 

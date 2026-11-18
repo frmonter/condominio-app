@@ -64,7 +64,7 @@ async function handleVerifySolvency(): Promise<void> {
         </h1>
         <p class="solvency-view__subtitle">
           Emita y verifique certificados inmutables con sello criptográfico HMAC-SHA256 para
-          unidades con deuda cero ($0.00 USD).
+          unidades con deuda cero (Q0.00).
         </p>
       </header>
 
@@ -136,7 +136,7 @@ async function handleVerifySolvency(): Promise<void> {
             <div class="solvency-view__cert-row">
               <span>Deuda Verificada:</span>
               <strong class="tabular-nums">
-                ${{ financeStore.data.certificadoSolvenciaActivo.deuda_verificada_usd }} USD
+                Q{{ financeStore.data.certificadoSolvenciaActivo.deuda_verificada_gtq }}
               </strong>
             </div>
             <div class="solvency-view__cert-row">

@@ -30,7 +30,7 @@ const createSuccessMessage = ref<string | null>(null);
 
 const canCreateConsultation = computed(() => {
   const rol = authStore.userRole;
-  return rol === 'PRESIDENTE' || rol === 'SECRETARIO';
+  return rol === 'PRESIDENTE' || rol === 'ADMINISTRADOR' || rol === 'SECRETARIO';
 });
 
 onMounted(async () => {
@@ -160,7 +160,7 @@ async function openConsultationDetail(id: number): Promise<void> {
           rows="3"
           required
           minlength="10"
-          placeholder="Detalle el alcance técnico, presupuesto en USD y fundamento legal..."
+          placeholder="Detalle el alcance técnico, presupuesto en GTQ y fundamento legal..."
         ></textarea>
       </div>
 

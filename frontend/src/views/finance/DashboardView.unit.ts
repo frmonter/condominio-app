@@ -19,18 +19,18 @@ describe('DashboardView.vue', () => {
     pushMock.mockReset();
     vi.restoreAllMocks();
     vi.spyOn(apiClient, 'get')
-      .mockResolvedValueOnce({ id: 1, fecha: '2026-10-29', tasa_usd_ves: '36.50' })
+      .mockResolvedValueOnce({ id: 1, fecha: '2026-10-29', tasa_usd_gtq: '7.70' })
       .mockResolvedValueOnce({
-        deuda_total_usd: '50.00',
-        total_egresos_usd: '200.00',
+        deuda_total_gtq: '50.00',
+        total_egresos_gtq: '200.00',
         gastos_por_categoria: { Vigilancia: '200.00' },
         estado_cobranza: [
-          { unidad_id: 1, periodo: '2026-10', estado: 'PENDIENTE', saldo_usd: '50.00' },
+          { unidad_id: 1, periodo: '2026-10', estado: 'PENDIENTE', saldo_gtq: '50.00' },
         ],
       });
   });
 
-  it('muestra saludo personalizado, tasa BCV, pestañas de cobranza/gastos, Hero y acciones rápidas', async () => {
+  it('muestra saludo personalizado, tipo de cambio, pestañas de cobranza/gastos, Hero y acciones rápidas', async () => {
     const authStore = useAuthStore();
     authStore.data = {
       id: 1,
@@ -45,7 +45,7 @@ describe('DashboardView.vue', () => {
 
     const wrapper = mount(DashboardView);
     expect(wrapper.text()).toContain('Hola, Ana Pérez');
-    expect(wrapper.find('#daily-rate-badge').text()).toContain('36.50 VES/USD');
+    expect(wrapper.find('#daily-rate-badge').text()).toContain('Q7.70 por US$1');
     expect(wrapper.findComponent({ name: 'ClosingBanner' }).props('periodo')).toBe('2026-10');
     expect(wrapper.findComponent({ name: 'CollectionTrafficLight' }).props('ownUnitId')).toBe(1);
     expect(wrapper.find('#dashboard-quick-actions').exists()).toBe(true);

@@ -89,8 +89,8 @@ def test_crear_area_social_exitosa_y_duplicada() -> None:
         json={
             "nombre": "Salón de Fiestas Principal",
             "aforo_maximo": 80,
-            "costo_uso_usd": "35.00",
-            "deposito_garantia_usd": "100.00",
+            "costo_uso_gtq": "35.00",
+            "deposito_garantia_gtq": "100.00",
             "requiere_solvencia_estricta": True,
         },
     )
@@ -98,15 +98,15 @@ def test_crear_area_social_exitosa_y_duplicada() -> None:
     body = resp.json()
     assert body["nombre"] == "Salón de Fiestas Principal"
     assert body["aforo_maximo"] == 80
-    assert Decimal(body["deposito_garantia_usd"]) == Decimal("100.00")
+    assert Decimal(body["deposito_garantia_gtq"]) == Decimal("100.00")
 
     # Nombre duplicado -> 409
     existente = AreaSocial(
         id=1,
         nombre="Salón de Fiestas Principal",
         aforo_maximo=80,
-        costo_uso_usd=Decimal("35.00"),
-        deposito_garantia_usd=Decimal("100.00"),
+        costo_uso_gtq=Decimal("35.00"),
+        deposito_garantia_gtq=Decimal("100.00"),
         requiere_solvencia_estricta=True,
         es_activa=True,
     )
@@ -147,8 +147,8 @@ def test_listar_areas_sociales_y_bloqueo_fantasma() -> None:
         id=5,
         nombre="Parrillera Norte",
         aforo_maximo=20,
-        costo_uso_usd=Decimal("15.00"),
-        deposito_garantia_usd=Decimal("50.00"),
+        costo_uso_gtq=Decimal("15.00"),
+        deposito_garantia_gtq=Decimal("50.00"),
         requiere_solvencia_estricta=True,
         es_activa=True,
     )
@@ -179,8 +179,8 @@ def test_solicitar_reserva_unidad_solvente_crea_tarea_inspeccion() -> None:
         id=3,
         nombre="Salón de Usos Múltiples",
         aforo_maximo=60,
-        costo_uso_usd=Decimal("25.00"),
-        deposito_garantia_usd=Decimal("80.00"),
+        costo_uso_gtq=Decimal("25.00"),
+        deposito_garantia_gtq=Decimal("80.00"),
         requiere_solvencia_estricta=True,
         es_activa=True,
     )
@@ -188,8 +188,8 @@ def test_solicitar_reserva_unidad_solvente_crea_tarea_inspeccion() -> None:
         id=1,
         periodo="2026-10",
         unidad_id=12,
-        monto_usd=Decimal("45.00"),
-        monto_pagado_usd=Decimal("45.00"),
+        monto_gtq=Decimal("45.00"),
+        monto_pagado_gtq=Decimal("45.00"),
         estado="PAGADO",
     )
     session = _mock_session(
@@ -227,8 +227,8 @@ def test_solicitar_reserva_rechazada_por_morosidad_403() -> None:
         id=3,
         nombre="Salón de Fiestas",
         aforo_maximo=60,
-        costo_uso_usd=Decimal("25.00"),
-        deposito_garantia_usd=Decimal("80.00"),
+        costo_uso_gtq=Decimal("25.00"),
+        deposito_garantia_gtq=Decimal("80.00"),
         requiere_solvencia_estricta=True,
         es_activa=True,
     )
@@ -236,8 +236,8 @@ def test_solicitar_reserva_rechazada_por_morosidad_403() -> None:
         id=9,
         periodo="2026-10",
         unidad_id=14,
-        monto_usd=Decimal("50.00"),
-        monto_pagado_usd=Decimal("10.00"),
+        monto_gtq=Decimal("50.00"),
+        monto_pagado_gtq=Decimal("10.00"),
         estado="PARCIAL",
     )
     session = _mock_session(
@@ -270,8 +270,8 @@ def test_solicitar_reserva_conflictos_fecha_unidad_area_e_idempotencia() -> None
         id=4,
         nombre="Cancha Múltiple",
         aforo_maximo=30,
-        costo_uso_usd=Decimal("0.00"),
-        deposito_garantia_usd=Decimal("0.00"),
+        costo_uso_gtq=Decimal("0.00"),
+        deposito_garantia_gtq=Decimal("0.00"),
         requiere_solvencia_estricta=False,
         es_activa=True,
     )

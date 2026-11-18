@@ -22,7 +22,10 @@ const consulta = computed(() => govStore.consultaActual);
 
 const canCloseConsultation = computed(() => {
   const rol = authStore.userRole;
-  return (rol === 'PRESIDENTE' || rol === 'SECRETARIO') && consulta.value?.estado === 'ABIERTA';
+  return (
+    (rol === 'PRESIDENTE' || rol === 'ADMINISTRADOR' || rol === 'SECRETARIO') &&
+    consulta.value?.estado === 'ABIERTA'
+  );
 });
 
 const isTransitionTarget = computed(
