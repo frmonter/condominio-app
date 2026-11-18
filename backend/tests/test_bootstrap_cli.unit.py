@@ -108,9 +108,9 @@ async def test_bootstrap_creacion_idempotencia_unidad_y_actualizacion(tmp_path: 
         cfg = BootstrapConfig(
             condominio_id=1,
             nombre="María Presidenta",
-            cedula="V-10203040",
+            cedula="0102030400101",
             correo="Maria.Presidenta@Condominio.Test",
-            telefono="+584121234567",
+            telefono="+50221234567",
             password="ClaveSeguraBootstrap2026!",
             rol="PRESIDENTE",
             estructura_nombre="Torre Ávila",
@@ -131,9 +131,9 @@ async def test_bootstrap_creacion_idempotencia_unidad_y_actualizacion(tmp_path: 
         cfg_rotado = BootstrapConfig(
             condominio_id=1,
             nombre="María Presidenta Actualizada",
-            cedula="V-10203040",
+            cedula="0102030400101",
             correo="maria.presidenta@condominio.test",
-            telefono="+584129998877",
+            telefono="+50229998877",
             password="NuevaClaveSeguraBootstrap2026!",
             rol="PRESIDENTE",
             estructura_nombre="Torre Ávila",
@@ -147,7 +147,7 @@ async def test_bootstrap_creacion_idempotencia_unidad_y_actualizacion(tmp_path: 
         async with factory() as session:
             user = (await session.execute(select(Usuario).where(Usuario.id == res1.usuario_id))).scalars().one()
             assert user.nombre == "María Presidenta Actualizada"
-            assert user.telefono == "+584129998877"
+            assert user.telefono == "+50229998877"
             assert verify_password("NuevaClaveSeguraBootstrap2026!", user.password_hash)
             contratos = (await session.execute(select(ContratoOcupacion))).scalars().all()
             assert len(contratos) == 1
@@ -170,9 +170,9 @@ async def test_bootstrap_promueve_fantasma_cierra_contrato_previo_y_detecta_conf
             fantasma = Usuario(
                 condominio_id=1,
                 nombre="Vecino Fantasma",
-                cedula="V-11112222",
+                cedula="0111122220101",
                 correo="fantasma@condominio.test",
-                telefono="+584140001111",
+                telefono="+50240001111",
                 password_hash=get_password_hash("ClaveInicialBootstrap1!"),
                 es_activo=False,
                 rol="FANTASMA",
@@ -180,9 +180,9 @@ async def test_bootstrap_promueve_fantasma_cierra_contrato_previo_y_detecta_conf
             otro = Usuario(
                 condominio_id=1,
                 nombre="Otro Vecino",
-                cedula="V-33334444",
+                cedula="0333344440101",
                 correo="otro@condominio.test",
-                telefono="+584140002222",
+                telefono="+50240002222",
                 password_hash=get_password_hash("ClaveOtroBootstrap1!"),
                 es_activo=True,
                 rol="PROPIETARIO",
@@ -203,9 +203,9 @@ async def test_bootstrap_promueve_fantasma_cierra_contrato_previo_y_detecta_conf
         cfg_promocion = BootstrapConfig(
             condominio_id=1,
             nombre="Vecino Fantasma",
-            cedula="V-11112222",
+            cedula="0111122220101",
             correo="fantasma@condominio.test",
-            telefono="+584140001111",
+            telefono="+50240001111",
             password="ClaveInicialBootstrap1!",
             rol="TESORERO",
             unidad_inicial="N-02",
@@ -235,7 +235,7 @@ async def test_bootstrap_promueve_fantasma_cierra_contrato_previo_y_detecta_conf
                 BootstrapConfig(
                     condominio_id=1,
                     correo="fantasma@condominio.test",
-                    cedula="V-33334444",
+                    cedula="0333344440101",
                     password="ClaveInicialBootstrap1!",
                 ),
                 session_factory=factory,
@@ -247,7 +247,7 @@ async def test_bootstrap_promueve_fantasma_cierra_contrato_previo_y_detecta_conf
                 BootstrapConfig(
                     condominio_id=1,
                     correo="fantasma@condominio.test",
-                    cedula="V-11112222",
+                    cedula="0111122220101",
                     password="ClaveInicialBootstrap1!",
                     unidad_inicial="X-99",
                 ),
@@ -279,7 +279,7 @@ def test_cli_ejecuta_con_flags_y_sqlite_archivo(
             "--password",
             "ClaveCliSegura2026!",
             "--cedula",
-            "V-99887766",
+            "0998877660101",
             "--nombre",
             "Presidente CLI",
             "--unidad-inicial",
@@ -297,9 +297,9 @@ def test_cli_ejecuta_con_flags_y_sqlite_archivo(
     monkeypatch.setenv("BOOTSTRAP_CONDOMINIO_ID", "1")
     monkeypatch.setenv("BOOTSTRAP_ADMIN_CORREO", "cli.presi@condominio.test")
     monkeypatch.setenv("BOOTSTRAP_ADMIN_PASSWORD", "ClaveCliRotada2026!")
-    monkeypatch.setenv("BOOTSTRAP_ADMIN_CEDULA", "V-99887766")
+    monkeypatch.setenv("BOOTSTRAP_ADMIN_CEDULA", "0998877660101")
     monkeypatch.setenv("BOOTSTRAP_ADMIN_NOMBRE", "Presidente CLI Env")
-    monkeypatch.setenv("BOOTSTRAP_ADMIN_TELEFONO", "+584129990000")
+    monkeypatch.setenv("BOOTSTRAP_ADMIN_TELEFONO", "+50229990000")
     assert main(["--from-env", "--allow-update-existing"]) == 0
     payload_env = json.loads(capsys.readouterr().out)
     assert payload_env["status"] == "updated"
@@ -326,7 +326,7 @@ async def test_bootstrap_aislamiento_rls_postgresql_17() -> None:
                 nombre="Admin Tenant Dos",
                 cedula=cedula,
                 correo=email,
-                telefono="+584125550202",
+                telefono="+50225550202",
                 password="ClaveRlsBootstrap2026!",
                 rol="PRESIDENTE",
             ),
@@ -442,9 +442,9 @@ def test_bootstrap_cli_argumentos_ayuda_y_errores(
             "--nombre",
             "Admin CLI",
             "--cedula",
-            "V-99887766",
+            "0998877660101",
             "--telefono",
-            "+584121112233",
+            "+50221112233",
             "--condominio-id",
             "1",
             "--rol",
@@ -508,7 +508,7 @@ def test_bootstrap_constantes_inmutables_claves_prohibidas_y_torre_default(tmp_p
     from src.models import Estructura as _Estructura
     from src.models import Usuario as _Usuario
 
-    assert ROLES_BOOTSTRAP_PERMITIDOS == ("PRESIDENTE", "VICEPRESIDENTE", "TESORERO", "SECRETARIO")
+    assert ROLES_BOOTSTRAP_PERMITIDOS == ("ADMINISTRADOR", "PRESIDENTE", "VICEPRESIDENTE", "TESORERO", "SECRETARIO")
     assert TIPOS_ESTRUCTURA_PERMITIDOS == ("EDIFICIO", "TORRE", "BLOQUE", "MANZANA", "CALLE")
     assert _PASSWORDS_PROHIBIDOS == frozenset({"changeme", "password1234", "123456789012", "admin1234567"})
 
@@ -581,8 +581,8 @@ def test_bootstrap_supervivientes_contratos_cli_y_estados(
     cfg_def = BootstrapConfig(correo="def@condo.test", password="ClaveDefaultSegura2026!")
     assert cfg_def.condominio_id == 1
     assert cfg_def.nombre == "Presidente Junta Inicial"
-    assert cfg_def.cedula == "V-00000001"
-    assert cfg_def.telefono == "+584120000000"
+    assert cfg_def.cedula == "1000000000101"
+    assert cfg_def.telefono == "+50222222222"
     assert cfg_def.rol == "PRESIDENTE"
     assert cfg_def.estructura_nombre is None
     assert cfg_def.estructura_tipo == "TORRE"
@@ -611,9 +611,9 @@ def test_bootstrap_supervivientes_contratos_cli_y_estados(
     cfg_vacio = BootstrapConfig.from_env()
     assert cfg_vacio.condominio_id == 1
     assert cfg_vacio.nombre == "Presidente Junta Inicial"
-    assert cfg_vacio.cedula == "V-00000001"
+    assert cfg_vacio.cedula == "1000000000101"
     assert cfg_vacio.correo == ""
-    assert cfg_vacio.telefono == "+584120000000"
+    assert cfg_vacio.telefono == "+50222222222"
     assert cfg_vacio.password == ""
     assert cfg_vacio.rol == "PRESIDENTE"
     assert cfg_vacio.estructura_nombre is None
@@ -650,11 +650,11 @@ def test_bootstrap_supervivientes_contratos_cli_y_estados(
         "--condominio-id",
         "Identificador entero del tenant/condominio.",
         "Nombre completo del administrador inicial.",
-        "Cédula o documento único.",
+        "DPI (13 dígitos) o pasaporte.",
         "Correo electrónico del administrador inicial.",
         "Teléfono de contacto.",
         "Contraseña inicial (o BOOTSTRAP_ADMIN_PASSWORD).",
-        "Rol inicial de Junta (PRESIDENTE/VICEPRESIDENTE/TESORERO).",
+        "Rol inicial: ADMINISTRADOR, PRESIDENTE, VICEPRESIDENTE, TESORERO o SECRETARIO.",
         "Nombre de estructura inicial opcional.",
         "Tipo de estructura inicial (TORRE, EDIFICIO, etc.).",
         "Identificador de unidad inicial opcional.",
@@ -680,7 +680,7 @@ def test_bootstrap_supervivientes_contratos_cli_y_estados(
     monkeypatch.setenv("BOOTSTRAP_ADMIN_CORREO", "  Ines.CLI@Condo.Test  ")
     monkeypatch.setenv("BOOTSTRAP_ADMIN_PASSWORD", "ClaveUtf8Segura2026!")
 
-    assert main(["--nombre", "Inés Peña", "--cedula", "V-77889900"]) == 0
+    assert main(["--nombre", "Inés Peña", "--cedula", "0778899000101"]) == 0
     raw_cli_out = capsys.readouterr().out.strip()
     assert json.loads(raw_cli_out) == {
         "status": "created",
@@ -749,9 +749,9 @@ def test_bootstrap_supervivientes_contratos_cli_y_estados(
                 BootstrapConfig(
                     condominio_id=7,
                     nombre="Admin Siete",
-                    cedula="V-70000007",
+                    cedula="0700000070101",
                     correo="siete@condo.test",
-                    telefono="+584127770007",
+                    telefono="+50227770007",
                     password="ClaveTenantSiete2026!",
                     estructura_nombre="  Torre Sol  ",
                     estructura_tipo="TORRE",
@@ -769,9 +769,9 @@ def test_bootstrap_supervivientes_contratos_cli_y_estados(
                 BootstrapConfig(
                     condominio_id=7,
                     nombre="Otro Nombre Ignorado",
-                    cedula="V-70000007",
+                    cedula="0700000070101",
                     correo="siete@condo.test",
-                    telefono="+584120000000",
+                    telefono="+50220000000",
                     password="ClaveTenantSiete2026!",
                     estructura_nombre="Torre Sol",
                     estructura_tipo="TORRE",
@@ -788,9 +788,9 @@ def test_bootstrap_supervivientes_contratos_cli_y_estados(
                 BootstrapConfig(
                     condominio_id=7,
                     nombre="Admin Siete Renombrado",
-                    cedula="V-70009999",
+                    cedula="0700099990101",
                     correo="siete@condo.test",
-                    telefono="+584127770007",
+                    telefono="+50227770007",
                     password="ClaveTenantSiete2026!",
                     unidad_inicial="S-01",
                     allow_update_existing=True,
@@ -805,9 +805,9 @@ def test_bootstrap_supervivientes_contratos_cli_y_estados(
                 BootstrapConfig(
                     condominio_id=7,
                     nombre="Admin Siete Renombrado",
-                    cedula="V-70000007",
+                    cedula="0700000070101",
                     correo="otro.alias@condo.test",
-                    telefono="+584129998811",
+                    telefono="+50229998811",
                     password="ClaveTenantSiete2026!",
                     unidad_inicial="S-01",
                     allow_update_existing=True,
@@ -822,9 +822,9 @@ def test_bootstrap_supervivientes_contratos_cli_y_estados(
                 BootstrapConfig(
                     condominio_id=7,
                     nombre="Admin Siete Renombrado",
-                    cedula="V-70000007",
+                    cedula="0700000070101",
                     correo="siete@condo.test",
-                    telefono="+584129998811",
+                    telefono="+50229998811",
                     password="ClaveTenantSiete2026!",
                     unidad_inicial="S-01",
                     allow_update_existing=True,
@@ -849,9 +849,9 @@ def test_bootstrap_supervivientes_contratos_cli_y_estados(
                 BootstrapConfig(
                     condominio_id=7,
                     nombre="Admin Siete Renombrado",
-                    cedula="V-70000007",
+                    cedula="0700000070101",
                     correo="siete@condo.test",
-                    telefono="+584129998811",
+                    telefono="+50229998811",
                     password="ClaveTenantSiete2026!",
                     estructura_nombre="Torre Sol",
                     estructura_tipo="TORRE",
@@ -888,7 +888,7 @@ def test_bootstrap_supervivientes_contratos_cli_y_estados(
                 BootstrapConfig(
                     condominio_id=7,
                     nombre="Segundo Admin",
-                    cedula="V-80000008",
+                    cedula="0800000080101",
                     correo="ocho@condo.test",
                     password="ClaveTenantOcho2026!",
                 ),
@@ -906,7 +906,7 @@ def test_bootstrap_supervivientes_contratos_cli_y_estados(
                     BootstrapConfig(
                         condominio_id=7,
                         correo="siete@condo.test",
-                        cedula="V-80000008",
+                        cedula="0800000080101",
                         password="ClaveTenantSiete2026!",
                     ),
                     session_factory=sf,
@@ -918,7 +918,7 @@ def test_bootstrap_supervivientes_contratos_cli_y_estados(
                     BootstrapConfig(
                         condominio_id=9,
                         correo="nueve@condo.test",
-                        cedula="V-90000009",
+                        cedula="0900000090101",
                         password="ClaveTenantNueve2026!",
                         unidad_inicial="S-01",
                     ),
@@ -929,3 +929,53 @@ def test_bootstrap_supervivientes_contratos_cli_y_estados(
             await engine.dispose()
 
     asyncio.run(_run_db_contracts())
+
+
+@pytest.mark.asyncio
+async def test_bootstrap_administrador_sin_unidad_normaliza_dpi_y_telefono(tmp_path: Path) -> None:
+    """Un ADMINISTRADOR contratado se crea sin unidad; DPI y teléfono quedan normalizados."""
+    engine, factory = await _crear_motor_sqlite(tmp_path, "administrador.db")
+    try:
+        cfg = BootstrapConfig(
+            nombre="Administradora Contratada",
+            cedula="2456 78901 0101",
+            correo="admin@condominio.test",
+            telefono="5555 1234",
+            password="ClaveAdministrador2026!",
+            rol="administrador",
+        )
+        res = await bootstrap_initial_admin(cfg, session_factory=factory, target_engine=engine)
+        assert res.status == "created"
+        assert res.rol == "ADMINISTRADOR"
+        assert res.unidad_id is None
+        async with factory() as session:
+            user = (await session.execute(select(Usuario).where(Usuario.id == res.usuario_id))).scalars().one()
+            assert user.cedula == "2456789010101"
+            assert user.telefono == "+50255551234"
+            contratos = (await session.execute(select(ContratoOcupacion))).scalars().all()
+            assert contratos == []
+    finally:
+        await engine.dispose()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("cedula", "telefono", "mensaje"),
+    [("12345", "55551234", "DPI inválido"), ("2456789010101", "123", "Teléfono inválido")],
+)
+async def test_bootstrap_rechaza_dpi_o_telefono_invalidos(
+    tmp_path: Path, cedula: str, telefono: str, mensaje: str
+) -> None:
+    engine, factory = await _crear_motor_sqlite(tmp_path, "invalidos.db")
+    try:
+        cfg = BootstrapConfig(
+            cedula=cedula,
+            correo="otro@condominio.test",
+            telefono=telefono,
+            password="ClaveAdministrador2026!",
+            rol="ADMINISTRADOR",
+        )
+        with pytest.raises(ValueError, match=mensaje):
+            await bootstrap_initial_admin(cfg, session_factory=factory, target_engine=engine)
+    finally:
+        await engine.dispose()

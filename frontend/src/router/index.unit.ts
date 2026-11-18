@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
+import { roleHasAccess } from '../stores/authStore';
 import { buildAppRouter, evaluateNavigationGuard } from './index';
 import {
   getActiveConsultationTransition,
@@ -169,5 +170,38 @@ describe('Guardias de Navegación Vue Router (router/index.ts)', () => {
     expect(mainEl.getAttribute('tabindex')).toBe('-1');
     expect(focusSpy).toHaveBeenCalledWith({ preventScroll: true });
     mainEl.remove();
+  });
+
+  it('el ADMINISTRADOR hereda los permisos de la Presidencia', () => {
+    const admin = {
+      isAuthenticated: true,
+      isGhostUser: false,
+      isActiveUser: true,
+      userRole: 'ADMINISTRADOR' as const,
+    };
+    expect(
+      evaluateNavigationGuard({ meta: { requiresActive: true, roles: ['PRESIDENTE'] } }, admin),
+    ).toBe(true);
+    expect(
+      evaluateNavigationGuard(
+        { meta: { requiresActive: true, roles: ['TESORERO', 'PRESIDENTE'] } },
+        admin,
+      ),
+    ).toBe(true);
+    expect(
+      evaluateNavigationGuard(
+        { meta: { requiresActive: true, roles: ['CONSERJE', 'VOCERO'] } },
+        admin,
+      ),
+    ).toBe('/dashboard');
+  });
+
+  it('roleHasAccess resuelve roles directos, herencia del administrador y rol vacío', () => {
+    expect(roleHasAccess('TESORERO', ['TESORERO'])).toBe(true);
+    expect(roleHasAccess('ADMINISTRADOR', ['PRESIDENTE'])).toBe(true);
+    expect(roleHasAccess('ADMINISTRADOR', ['ADMINISTRADOR'])).toBe(true);
+    expect(roleHasAccess('ADMINISTRADOR', ['TESORERO'])).toBe(false);
+    expect(roleHasAccess('VICEPRESIDENTE', ['PRESIDENTE'])).toBe(false);
+    expect(roleHasAccess(null, ['PRESIDENTE'])).toBe(false);
   });
 });

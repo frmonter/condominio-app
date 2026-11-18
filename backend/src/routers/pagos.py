@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from src.database import get_db
-from src.dependencies import get_current_user, verificar_roles, verificar_usuario_activo
+from src.dependencies import get_current_user, roles_efectivos, verificar_roles, verificar_usuario_activo
 from src.finanzas import (
     ErrorFinanciero,
     aplicar_pago,
@@ -82,7 +82,7 @@ async def _obtener_unidad_bloqueada(db: AsyncSession, unidad_id: int) -> Unidad:
 
 async def _verificar_titularidad_recibo(db: AsyncSession, usuario: Usuario, unidad_id: int) -> None:
     """Impide IDOR verificando contrato activo en la unidad o pertenencia a Tesorería/Presidencia."""
-    if getattr(usuario, "rol", "") in _ROLES_TESORERIA:
+    if getattr(usuario, "rol", "") in roles_efectivos(_ROLES_TESORERIA):
         return
     res = await db.execute(
         select(ContratoOcupacion).where(

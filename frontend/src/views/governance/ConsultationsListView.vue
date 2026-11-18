@@ -30,7 +30,7 @@ const createSuccessMessage = ref<string | null>(null);
 
 const canCreateConsultation = computed(() => {
   const rol = authStore.userRole;
-  return rol === 'PRESIDENTE' || rol === 'SECRETARIO';
+  return rol === 'PRESIDENTE' || rol === 'ADMINISTRADOR' || rol === 'SECRETARIO';
 });
 
 onMounted(async () => {

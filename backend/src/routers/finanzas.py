@@ -15,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from src.database import get_db
-from src.dependencies import get_current_user, verificar_roles, verificar_usuario_activo
+from src.dependencies import get_current_user, roles_efectivos, verificar_roles, verificar_usuario_activo
 from src.facturacion_lph import (
     calcular_cargos_modalidad,
     cargar_contexto_facturacion,
@@ -430,7 +430,7 @@ async def facturar_periodo(
 
 
 async def _verificar_acceso_unidad(db: AsyncSession, usuario: Usuario, unidad_id: int) -> None:
-    if getattr(usuario, "rol", "") in _ROLES_JUNTA:
+    if getattr(usuario, "rol", "") in roles_efectivos(_ROLES_JUNTA):
         return
     res = await db.execute(
         select(ContratoOcupacion).where(

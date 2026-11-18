@@ -13,12 +13,31 @@ export type RolUsuario =
   | 'FANTASMA'
   | 'PROPIETARIO'
   | 'INQUILINO'
+  | 'ADMINISTRADOR'
   | 'PRESIDENTE'
   | 'VICEPRESIDENTE'
   | 'TESORERO'
   | 'SECRETARIO'
   | 'VOCERO'
   | 'CONSERJE';
+
+/**
+ * Indica si un rol puede acceder a una sección restringida a `allowedRoles`.
+ * El ADMINISTRADOR (designado por la asamblea, Código Civil Arts. 547-549) hereda
+ * todos los permisos de la Presidencia, igual que en el backend.
+ */
+export function roleHasAccess(
+  role: RolUsuario | null | undefined,
+  allowedRoles: readonly RolUsuario[],
+): boolean {
+  if (!role) {
+    return false;
+  }
+  if (allowedRoles.includes(role)) {
+    return true;
+  }
+  return role === 'ADMINISTRADOR' && allowedRoles.includes('PRESIDENTE');
+}
 
 export interface UsuarioPerfil {
   id: number;

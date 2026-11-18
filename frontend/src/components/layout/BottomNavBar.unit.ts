@@ -31,4 +31,12 @@ describe('BottomNavBar.vue (Ergonomía Mobile-First <= 4 ítems por rol + SVG)',
     });
     expect(consWrapper.findAll('button').length).toBe(2);
   });
+
+  it('muestra al ADMINISTRADOR accesos de tesorería y de usuarios', () => {
+    const adminWrapper = mount(BottomNavBar, {
+      props: { role: 'ADMINISTRADOR', currentPath: '/dashboard' },
+    });
+    const labels = adminWrapper.findAll('button').map((b) => b.text());
+    expect(labels).toEqual(['Inicio', 'Aprobar Pagos', 'Usuarios', 'Incidencias']);
+  });
 });

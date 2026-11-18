@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { isValidDocumentoIdentidad, isValidTelefono } from '../../utils/identidadGt';
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useIdempotency } from '../../composables/useIdempotency';
@@ -48,6 +49,16 @@ async function onSubmit(): Promise<void> {
   errorBanner.value = null;
   if (!nombre.value.trim() || !cedula.value.trim() || !correo.value.trim() || !password.value) {
     errorBanner.value = 'Complete todos los campos obligatorios para solicitar su registro.';
+    return;
+  }
+  if (!isValidDocumentoIdentidad(cedula.value)) {
+    errorBanner.value =
+      'Ingrese un DPI válido (13 dígitos, ej. 2456 78901 0101) o su número de pasaporte.';
+    return;
+  }
+  if (!isValidTelefono(telefono.value)) {
+    errorBanner.value =
+      'Ingrese un teléfono válido: 8 dígitos (ej. 5555 1234) o formato internacional +código.';
     return;
   }
   try {
@@ -115,12 +126,14 @@ async function onSubmit(): Promise<void> {
         </div>
 
         <div class="field">
-          <label for="reg-cedula" class="field__label">Documento de identidad (Cédula)</label>
+          <label for="reg-cedula" class="field__label">DPI o pasaporte</label>
           <input
             id="reg-cedula"
             v-model="cedula"
             name="cedula"
             type="text"
+            placeholder="Ej. 2456 78901 0101"
+            autocomplete="off"
             enterkeyhint="next"
             required
             class="field__input"
@@ -151,6 +164,7 @@ async function onSubmit(): Promise<void> {
             v-model="telefono"
             name="tel"
             type="tel"
+            placeholder="Ej. 5555 1234"
             autocomplete="tel"
             inputmode="tel"
             enterkeyhint="next"

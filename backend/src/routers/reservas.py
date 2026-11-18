@@ -11,7 +11,13 @@ from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
-from src.dependencies import get_current_user, verificar_roles, verificar_usuario_activo
+from src.dependencies import (
+    es_presidencia,
+    get_current_user,
+    roles_efectivos,
+    verificar_roles,
+    verificar_usuario_activo,
+)
 from src.finanzas import calcular_deuda_total, cuantizar
 from src.models import (
     AreaSocial,
@@ -62,7 +68,7 @@ async def _obtener_unidad_autorizada(db: AsyncSession, usuario: Usuario, unidad_
     unidad = res.scalars().first()
     if not unidad:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Unidad inmobiliaria no encontrada.")
-    if usuario.rol == "PRESIDENTE":
+    if es_presidencia(usuario):
         return unidad
     unidades_propias = await _unidades_activas_usuario(db, usuario.id)
     if unidad_id not in unidades_propias:
@@ -216,7 +222,7 @@ async def listar_reservas_areas(
         .join(AreaSocial, AreaSocial.id == ReservaAreaSocial.area_id)
         .join(Unidad, Unidad.id == ReservaAreaSocial.unidad_id)
     )
-    if usuario.rol not in _ROLES_JUNTA_Y_GARITA:
+    if usuario.rol not in roles_efectivos(_ROLES_JUNTA_Y_GARITA):
         unidades_propias = await _unidades_activas_usuario(db, usuario.id)
         if unidades_propias:
             stmt = stmt.where(
@@ -303,7 +309,7 @@ async def _completar_tarea_inspeccion(db: AsyncSession, tarea_inspeccion_id: int
 
 
 async def _verificar_permiso_cancelacion(db: AsyncSession, usuario: Usuario, reserva: ReservaAreaSocial) -> None:
-    if usuario.rol in _ROLES_CANCELACION_JUNTA or reserva.solicitante_id == usuario.id:
+    if usuario.rol in roles_efectivos(_ROLES_CANCELACION_JUNTA) or reserva.solicitante_id == usuario.id:
         return
     unidades_propias = await _unidades_activas_usuario(db, usuario.id)
     if reserva.unidad_id not in unidades_propias:

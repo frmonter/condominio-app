@@ -19,11 +19,18 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from sqlalchemy.future import select
 
 from src.database import AsyncSessionLocal, Base, engine
+from src.identidad_gt import normalizar_documento_identidad, normalizar_telefono
 from src.models import ContratoOcupacion, Estructura, Unidad, Usuario
 from src.schemas import _validar_correo
 from src.security import get_password_hash, validate_production_security_settings, verify_password
 
-ROLES_BOOTSTRAP_PERMITIDOS: tuple[str, ...] = ("PRESIDENTE", "VICEPRESIDENTE", "TESORERO", "SECRETARIO")
+ROLES_BOOTSTRAP_PERMITIDOS: tuple[str, ...] = (
+    "ADMINISTRADOR",
+    "PRESIDENTE",
+    "VICEPRESIDENTE",
+    "TESORERO",
+    "SECRETARIO",
+)
 TIPOS_ESTRUCTURA_PERMITIDOS: tuple[str, ...] = ("EDIFICIO", "TORRE", "BLOQUE", "MANZANA", "CALLE")
 _PASSWORDS_PROHIBIDOS: frozenset[str] = frozenset({"changeme", "password1234", "123456789012", "admin1234567"})
 _MIN_PASSWORD_LEN = 12
@@ -66,8 +73,8 @@ class BootstrapConfig:
     password: str
     condominio_id: int = 1
     nombre: str = "Presidente Junta Inicial"
-    cedula: str = "V-00000001"
-    telefono: str = "+584120000000"
+    cedula: str = "1000000000101"
+    telefono: str = "+50222222222"
     rol: str = "PRESIDENTE"
     estructura_nombre: str | None = None
     estructura_tipo: str = "TORRE"
@@ -80,9 +87,9 @@ class BootstrapConfig:
         return cls(
             condominio_id=_env_int_pos("BOOTSTRAP_CONDOMINIO_ID", 1),
             nombre=_env_str("BOOTSTRAP_ADMIN_NOMBRE", "Presidente Junta Inicial"),
-            cedula=_env_str("BOOTSTRAP_ADMIN_CEDULA", "V-00000001"),
+            cedula=_env_str("BOOTSTRAP_ADMIN_CEDULA", "1000000000101"),
             correo=_env_str("BOOTSTRAP_ADMIN_CORREO").lower(),
-            telefono=_env_str("BOOTSTRAP_ADMIN_TELEFONO", "+584120000000"),
+            telefono=_env_str("BOOTSTRAP_ADMIN_TELEFONO", "+50222222222"),
             password=os.getenv("BOOTSTRAP_ADMIN_PASSWORD", ""),
             rol=_env_str("BOOTSTRAP_ADMIN_ROL", "PRESIDENTE").upper(),
             estructura_nombre=_env_str("BOOTSTRAP_ESTRUCTURA_NOMBRE") or None,
@@ -121,6 +128,8 @@ def _validar_config(cfg: BootstrapConfig) -> BootstrapConfig:
     telefono = cfg.telefono.strip()
     if not nombre or not cedula or not telefono:
         raise ValueError("nombre, cedula y telefono son obligatorios.")
+    cedula = normalizar_documento_identidad(cedula)
+    telefono = normalizar_telefono(telefono)
     correo_norm = _validar_correo(cfg.correo.strip().lower()).lower()
     password_val = _validar_password_bootstrap(cfg.password)
     rol_norm = cfg.rol.strip().upper()
@@ -348,11 +357,13 @@ def _build_cli_parser() -> argparse.ArgumentParser:
     parser.add_argument("--from-env", action="store_true", help="Lee la configuración desde BOOTSTRAP_*.")
     parser.add_argument("--condominio-id", type=int, default=None, help="Identificador entero del tenant/condominio.")
     parser.add_argument("--nombre", default=None, help="Nombre completo del administrador inicial.")
-    parser.add_argument("--cedula", default=None, help="Cédula o documento único.")
+    parser.add_argument("--cedula", default=None, help="DPI (13 dígitos) o pasaporte.")
     parser.add_argument("--correo", default=None, help="Correo electrónico del administrador inicial.")
     parser.add_argument("--telefono", default=None, help="Teléfono de contacto.")
     parser.add_argument("--password", default=None, help="Contraseña inicial (o BOOTSTRAP_ADMIN_PASSWORD).")
-    parser.add_argument("--rol", default=None, help="Rol inicial de Junta (PRESIDENTE/VICEPRESIDENTE/TESORERO).")
+    parser.add_argument(
+        "--rol", default=None, help="Rol inicial: ADMINISTRADOR, PRESIDENTE, VICEPRESIDENTE, TESORERO o SECRETARIO."
+    )
     parser.add_argument("--estructura-nombre", default=None, help="Nombre de estructura inicial opcional.")
     parser.add_argument("--estructura-tipo", default=None, help="Tipo de estructura inicial (TORRE, EDIFICIO, etc.).")
     parser.add_argument("--unidad-inicial", default=None, help="Identificador de unidad inicial opcional.")

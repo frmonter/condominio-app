@@ -14,6 +14,13 @@ Todos los cambios notables en este proyecto son documentados en este archivo sig
 - Métodos de pago adaptados a Guatemala: `TRANSFERENCIA`, `DEPOSITO`, `CHEQUE`, `TARJETA` (exigen referencia) y `EFECTIVO`. Se eliminan `PAGO_MOVIL` y `ZELLE`.
 - Interfaz: montos en quetzales con símbolo `Q`, equivalentes en USD y textos de tipo de cambio sin referencias al BCV.
 
+### Added
+
+- **Rol `ADMINISTRADOR`** para la administración designada por la asamblea (Código Civil de Guatemala, Arts. 547-549): hereda todos los permisos de la Presidencia, incluida Tesorería, en backend y frontend, y no requiere unidad asignada. Se crea con el bootstrap (`--rol ADMINISTRADOR` o `BOOTSTRAP_ADMIN_ROL=ADMINISTRADOR`).
+- **Identificación guatemalteca:** el registro valida el DPI (13 dígitos, departamento 01-22 y municipio válidos) o el pasaporte para residentes extranjeros, y lo guarda normalizado (solo dígitos). El campo de la API sigue llamándose `cedula`.
+- **Teléfonos +502:** 8 dígitos locales se normalizan a `+502XXXXXXXX`; se aceptan números internacionales con `+código`.
+- Validación de DPI y teléfono también en el formulario de registro (`src/utils/identidadGt.ts`).
+
 ### Fixed
 
 - Las conversiones de moneda del frontend devuelven `0.00` ante montos negativos en lugar de un equivalente negativo.

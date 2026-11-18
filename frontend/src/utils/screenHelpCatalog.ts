@@ -12,6 +12,7 @@ export type RolUsuarioAyuda =
   | 'PROPIETARIO'
   | 'INQUILINO'
   | 'CONSERJE'
+  | 'ADMINISTRADOR'
   | 'PRESIDENTE'
   | 'VICEPRESIDENTE'
   | 'TESORERO'
@@ -43,9 +44,14 @@ function normalizePath(rawPath: string): string {
 export function getScreenHelp(rawPath: string, userRole?: RolUsuarioAyuda): ScreenHelpData {
   const path = normalizePath(rawPath);
   const role = (userRole || 'PROPIETARIO').toUpperCase();
-  const esDirectiva = ['PRESIDENTE', 'VICEPRESIDENTE', 'TESORERO', 'SECRETARIO', 'VOCERO'].includes(
-    role,
-  );
+  const esDirectiva = [
+    'ADMINISTRADOR',
+    'PRESIDENTE',
+    'VICEPRESIDENTE',
+    'TESORERO',
+    'SECRETARIO',
+    'VOCERO',
+  ].includes(role);
 
   switch (path) {
     case '/login':

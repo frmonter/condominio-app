@@ -6,6 +6,8 @@ from typing import Annotated, Any, Literal
 import email_validator
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from src.identidad_gt import normalizar_documento_identidad, normalizar_telefono
+
 
 def _validar_correo(valor: str) -> str:
     """Valida el correo con las mismas reglas que el contrato (format: email), permitiendo
@@ -32,6 +34,16 @@ def _validar_url_evidencia_segura(valor: str) -> str:
 
 CorreoValido = Annotated[str, Field(json_schema_extra={"format": "email"}), AfterValidator(_validar_correo)]
 UrlEvidenciaSegura = Annotated[str, Field(min_length=1), AfterValidator(_validar_url_evidencia_segura)]
+DocumentoIdentidadGT = Annotated[
+    str,
+    Field(description="DPI (13 dígitos) o pasaporte para residentes extranjeros"),
+    AfterValidator(normalizar_documento_identidad),
+]
+TelefonoGT = Annotated[
+    str,
+    Field(description="8 dígitos locales (+502) o formato internacional"),
+    AfterValidator(normalizar_telefono),
+]
 
 
 class UsuarioBase(BaseModel):
@@ -44,6 +56,8 @@ class UsuarioBase(BaseModel):
 
 
 class UsuarioCreate(UsuarioBase):
+    cedula: DocumentoIdentidadGT
+    telefono: TelefonoGT
     password: str
     unidad_solicitada_id: int = Field(strict=True)
     tipo_ocupante_solicitado: str

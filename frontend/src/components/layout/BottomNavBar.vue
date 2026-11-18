@@ -47,6 +47,19 @@ const items = computed<NavItem[]>(() => {
       { id: 'nav-incidencias', label: 'Incidencias', to: '/incidencias', icon: 'alert-circle' },
     ];
   }
+  if (props.role === 'ADMINISTRADOR') {
+    return [
+      { id: 'nav-inicio', label: 'Inicio', to: '/dashboard', icon: 'home' },
+      {
+        id: 'nav-revision',
+        label: 'Aprobar Pagos',
+        to: '/tesoreria/pagos',
+        icon: 'check-square',
+      },
+      { id: 'nav-usuarios', label: 'Usuarios', to: '/admin/usuarios', icon: 'user-check' },
+      { id: 'nav-incidencias', label: 'Incidencias', to: '/incidencias', icon: 'alert-circle' },
+    ];
+  }
   if (props.role === 'PRESIDENTE' || props.role === 'VICEPRESIDENTE') {
     return [
       { id: 'nav-inicio', label: 'Inicio', to: '/dashboard', icon: 'home' },

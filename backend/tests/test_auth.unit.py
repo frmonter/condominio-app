@@ -56,9 +56,9 @@ def test_register_user_success(client: TestClient) -> None:
 
     payload = {
         "nombre": "Pedro QA",
-        "cedula": "V-9999999",
+        "cedula": "0099999990101",
         "correo": "pedro@test.com",
-        "telefono": "12345",
+        "telefono": "55551234",
         "password": "Mypassword1!",
         "unidad_solicitada_id": 1,
         "tipo_ocupante_solicitado": "PROPIETARIO",
@@ -84,9 +84,9 @@ def test_register_user_duplicate_idempotency_key(client: TestClient) -> None:
 
     payload = {
         "nombre": "Pedro Duplicado",
-        "cedula": "V-9999999",
+        "cedula": "0099999990101",
         "correo": "pedro@test.com",
-        "telefono": "12345",
+        "telefono": "55551234",
         "password": "Mypassword1!",
         "unidad_solicitada_id": 1,
         "tipo_ocupante_solicitado": "PROPIETARIO",
@@ -115,9 +115,9 @@ def test_register_user_already_registered(client: TestClient) -> None:
 
     payload = {
         "nombre": "Pedro Ya Existe",
-        "cedula": "V-9999999",
+        "cedula": "0099999990101",
         "correo": "pedro@test.com",
-        "telefono": "12345",
+        "telefono": "55551234",
         "password": "Mypassword1!",
         "unidad_solicitada_id": 1,
         "tipo_ocupante_solicitado": "PROPIETARIO",
@@ -135,9 +135,9 @@ def test_register_missing_idempotency_key(client: TestClient) -> None:
     """Falla con 422 si no se envía el header de idempotencia"""
     payload = {
         "nombre": "Pedro QA",
-        "cedula": "V-9999999",
+        "cedula": "0099999990101",
         "correo": "pedro@test.com",
-        "telefono": "12345",
+        "telefono": "55551234",
         "password": "Mypassword1!",
         "unidad_solicitada_id": 1,
         "tipo_ocupante_solicitado": "PROPIETARIO",
@@ -163,9 +163,9 @@ def test_register_user_db_failure(client: TestClient) -> None:
 
     payload = {
         "nombre": "Pedro Error",
-        "cedula": "V-1111111",
+        "cedula": "0011111110101",
         "correo": "error@test.com",
-        "telefono": "123",
+        "telefono": "55550000",
         "password": "Mypassword1!",
         "unidad_solicitada_id": 1,
         "tipo_ocupante_solicitado": "PROPIETARIO",
@@ -196,9 +196,9 @@ def test_register_user_integrity_error(client: TestClient) -> None:
 
     payload = {
         "nombre": "Pedro Integridad",
-        "cedula": "V-2222222",
+        "cedula": "0022222220101",
         "correo": "integridad@test.com",
-        "telefono": "123",
+        "telefono": "55550000",
         "password": "Mypassword1!",
         "unidad_solicitada_id": 1,
         "tipo_ocupante_solicitado": "PROPIETARIO",
@@ -434,7 +434,7 @@ def test_me_real_orm_usuario_and_revoked_sid(client: TestClient) -> None:
     res_user.scalars().first.return_value = Usuario(
         id=22,
         nombre="Real ORM",
-        cedula="V-12345678",
+        cedula="0123456780101",
         correo="real@test.com",
         telefono="04141234567",
         password_hash="h",
@@ -450,7 +450,7 @@ def test_me_real_orm_usuario_and_revoked_sid(client: TestClient) -> None:
     ok_resp = client.get("/api/auth/me")
     assert ok_resp.status_code == 200
     body = ok_resp.json()
-    assert body["cedula"] == "V-12345678"
+    assert body["cedula"] == "0123456780101"
     assert body["telefono"] == "04141234567"
     assert body["unidad_activa_id"] == 42
     assert ok_resp.headers.get("x-csrf-token") == generate_csrf_token(sid_unico)
@@ -486,7 +486,7 @@ def test_login_lockout_429_and_short_idempotency_key(client: TestClient) -> None
         "/api/auth/register",
         json={
             "nombre": "Corto",
-            "cedula": "V-9991112",
+            "cedula": "0099911120101",
             "correo": "corto@test.com",
             "telefono": "0414",
             "password": "Mypassword1!",
